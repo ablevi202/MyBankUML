@@ -1,0 +1,30 @@
+package bank;
+
+public class Admin extends User{
+
+    private String adminID; // Unique Admin ID
+    private static int nextAdminID = 0;
+    private String name; // Admin's full name
+
+    // Constructor
+    public Admin(String username, String name){
+        super(username, "Admin");
+        this.name = name;
+        this.adminID = String.valueOf(nextAdminID);
+        nextAdminID++;
+    }
+
+    // Accessors
+    public String getAdminID(){
+        return adminID;
+    }
+
+    public String getName(){
+        return name;
+    }
+
+    // Mutator
+    public void setName(String name){
+        this.name = name;
+    }
+}
