@@ -17,7 +17,7 @@ public abstract class User{
 
     // Accessors
     public String getID(){
-        return id;
+        return ID;
     }
 
     public String getUsername(){

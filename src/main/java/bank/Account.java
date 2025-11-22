@@ -7,7 +7,7 @@ public abstract class Account {
 
     protected Customer customer; // The customer that owns the account
     protected List<Transaction> transactions; // List of all transactions involving the account
-    private Stirng accountID; // Unique account ID
+    private final String accountID; // Unique account ID
     private static int nextAccountID = 0; // Stores the next accountID so all account IDs are unique
     private float balance; // The balance of the account
     private String accountType; // The type of account, either chequing or saving account
@@ -50,7 +50,7 @@ public abstract class Account {
         return accountType;
     }
 
-    public ArrayList getTransactions(){
+    public List<Transaction> getTransactions(){
         return transactions;
     }
 

@@ -2,7 +2,7 @@ package bank;
 
 public class Check extends Account {
     public Check(Customer customer) {
-        super(customer);
+        super(customer, "Chequing");
 
     }
     public void title(){

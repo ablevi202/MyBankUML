@@ -1,11 +1,8 @@
 package bank;
 
-import lombok.Getter;
-
 import java.util.ArrayList;
 import java.util.List;
 
-@Getter
 public class Bank {
     private final String name;
     private final List<Branch> branches;
@@ -24,5 +21,14 @@ public class Bank {
         for (Branch branch : branches) {
             System.out.println("Branch: " + branch.getAddress());
         }
+    }
+
+    // --- MANUAL GETTERS (No Lombok needed) ---
+    public String getName() {
+        return name;
+    }
+
+    public List<Branch> getBranches() {
+        return branches;
     }
 }

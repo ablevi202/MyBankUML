@@ -2,7 +2,7 @@ package bank;
 
 public class Saving extends Account {
     public Saving(Customer customer) {
-        super(customer);
+        super(customer, "Savings");
     }
     public void title(){
         System.out.println("**Payments**");

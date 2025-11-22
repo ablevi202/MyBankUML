@@ -9,7 +9,7 @@ public class Transaction {
     private String transactionID; // Unique ID for all transactions
     private static int nextTransactionID = 0;
     private String TxStatus; // Status of the transaction, either PENDING_REVIEW, APPROVED, CANCELLED, or COMPLETED
-    private float ammount; // The amount of money being transferred
+    private float amount; // The amount of money being transferred
     private Instant createdAt; // The instant that the transaction was created
     private String fromAccount; // The ID of the account that the money is coming from
     private String toAccount; // The ID of the account that the money is going to
@@ -53,7 +53,7 @@ public class Transaction {
 
 
     // Mutator
-    public void setTxStatus(string TxStatus){
+    public void setTxStatus(String TxStatus){
         this.TxStatus = TxStatus;
     }
 

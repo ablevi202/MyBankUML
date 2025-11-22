@@ -1,12 +1,12 @@
 package bank;
 
-import java.util.Date;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-
+import java.util.Date;
 public class Customer extends User {
 
     private String name; // Customer's full name
-    private String customerID; // Unique customer ID for each customer
+    private final String customerID; // Unique customer ID for each customer
     private static int nextCustomerID = 0; // Stores the next customer ID to be used, so each one is unique.
     private Date dateOfBirth; // Customer's date of birth
     private String placeOfBirth; // Customer's place of birth
@@ -66,7 +66,7 @@ public class Customer extends User {
     }
 
     // Mutators
-    public void setUsername(string username){
+    public void setUsername(String username){
         super.setUsername(username);
     }
 
@@ -77,6 +77,7 @@ public class Customer extends User {
 
     // Display customers info
     public void printCustomerInfo() {
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
         System.out.println("Customer's info: " );
         System.out.println("name: "+ name);
         System.out.println("place of birth: "+ placeOfBirth);       

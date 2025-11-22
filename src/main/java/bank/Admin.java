@@ -2,7 +2,7 @@ package bank;
 
 public class Admin extends User{
 
-    private String adminID; // Unique Admin ID
+    private final String adminID; // Unique Admin ID
     private static int nextAdminID = 0;
     private String name; // Admin's full name
 

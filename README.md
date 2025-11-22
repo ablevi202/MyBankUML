@@ -1,54 +1,50 @@
-# 🏦 BankUml: Banking System Simulation
+# 🏦 MyBankUML: Banking System Simulation (GUI Version)
 
-Welcome to **BankUml**, a Java-based banking application designed to simulate core banking operations such as account management, transactions, and receipts.  
+Welcome to **MyBankUML**, a Java-based banking application featuring a complete Graphical User Interface (GUI). This system simulates core banking operations for Customers, Tellers, and Administrators using a role-based architecture.
 
-This project demonstrates the use of Object-Oriented Programming (OOP) principles, including **Inheritance**, **Encapsulation**, **Abstraction**, and **Polymorphism**, strictly following the provided UML diagram.
+Currently, the application features a **fully interactive UI** connected to a **Mock Facade (UIManager)**, allowing you to navigate all workflows without a live database connection.
 
-## 📌 Features
+## 📌 Current Features
 
-- **Account Management**: Create and manage multiple types of bank accounts.
-- **Transaction Handling**: Simulate payments and generate receipts.
-- **UML-Driven Design**: Class structure directly follows the given UML diagram.
+### 🎨 Graphical User Interface (Swing)
+- **Customer Interface:**
+  - Dashboard with Chequing & Savings views.
+  - Transaction history exploration.
+  - Fund transfer workflows with status confirmation.
+- **Teller Interface:**
+  - Customer & Account Search (by Name, ID, Place of Birth).
+  - Account Management (Deposit, Withdraw, Transfer).
+  - Create new Customer profiles.
+  - Review & Approve pending transactions.
+- **Admin Interface:**
+  - Manage Employees (Create, Remove, Activate).
+  - Search Employee records.
+  - System-wide transaction oversight.
 
-**Uml**
-
-![url](./UML.jpg)
-
-## 🚀 How to Run
-
-Make sure you have the following installed:
-
-- Java
-- Maven (if Lombok is missing or not working correctly)
-
-1. Clone the repository:
-
-```bash
-git clone https://github.com/M-PERSIC/BankUml.git
-cd BankUml
-```
-
-2. Compile the code:
-
-```bash
-javac -cp "libs/*" bank/*.java 
-```
-
-3. Run the program:
-
-```bash
-# Linux/MAC
-java -cp ".:libs/*" bank.Main
-# Windows
-java -cp ".;libs/*" bank.Main
-```
-
-To redownload the Lombok jar:
-
-```bash
-mvn dependency:copy-dependencies -DoutputDirectory=./libs
-```
+### 🏗 Architecture
+- **Facade Pattern:** All UI actions route through `UIManager`.
+- **Role-Based Access Control:** Distinct dashboards for different user types.
+- **Standard Java Structure:** Organized in `src/main/java` packages.
 
 ---
 
-Originally developed by [@shayanaminaei](https://github.com/shayanaminaei)
+## 🚀 How to Run
+
+### Prerequisites
+- **Java Development Kit (JDK) 21** or higher.
+- No external libraries (Maven/Lombok) are required to run this version.
+
+### Step 1: Clone or Download
+Navigate to the project root folder (`MyBankUML`).
+
+### Step 2: Compile
+Run the following command from the root folder to compile all source files:
+
+```bash
+javac -sourcepath src/main/java src/main/java/bank/Main.java
+```
+### Step 3: Run
+Launch the application:
+```bash
+java -cp src/main/java bank.Main
+```
