@@ -5,11 +5,13 @@ import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.util.List;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JTextField;
 
 import bank.UIManager;
@@ -40,8 +42,20 @@ public class TransactionPage extends JFrame {
         gbc.gridy = 1;
         add(new JLabel("Select the account you would like to pay from:"), gbc);
         
-        String[] accountTypes = {"Chequing", "Savings"};
-        JComboBox<String> accountBox = new JComboBox<>(accountTypes);
+        List<String[]> userAccounts = uiManager.getUserAccounts();
+        String[] accountOptions;
+        
+        if (userAccounts.isEmpty()) {
+            accountOptions = new String[]{"No Accounts Found"};
+        } else {
+            accountOptions = new String[userAccounts.size()];
+            for (int i = 0; i < userAccounts.size(); i++) {
+                String[] acc = userAccounts.get(i);
+                accountOptions[i] = acc[1] + " (" + acc[0] + ")"; 
+            }
+        }
+        
+        JComboBox<String> accountBox = new JComboBox<>(accountOptions);
         gbc.gridy = 2;
         add(accountBox, gbc);
 
@@ -68,10 +82,37 @@ public class TransactionPage extends JFrame {
         completeButton.setBorderPainted(false);
         
         completeButton.addActionListener(e -> {
-            // Here you would normally call uiManager.performTransaction(...)
-            // For now, we just move to the status page
-            dispose();
-            new TransactionStatusPage(uiManager, toAccountField.getText(), amountField.getText());
+            String selected = (String) accountBox.getSelectedItem();
+            String toId = toAccountField.getText();
+            String amount = amountField.getText();
+
+            if (selected == null || selected.equals("No Accounts Found")) {
+                JOptionPane.showMessageDialog(this, "You need a valid account to transfer from.");
+                return;
+            }
+            if (toId.isEmpty() || amount.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Please fill in all fields.");
+                return;
+            }
+
+            String fromId = selected.substring(selected.lastIndexOf("(") + 1, selected.lastIndexOf(")"));
+
+            // --- CALL REAL BACKEND & CHECK STATUS ---
+            String status = uiManager.performTransfer(fromId, toId, amount);
+            
+            if ("SUCCESS".equals(status)) {
+                dispose();
+                // Only show success page if it actually succeeded
+                new TransactionStatusPage(uiManager, fromId, toId, amount);
+            } else if ("PENDING".equals(status)) {
+                JOptionPane.showMessageDialog(this, "Transaction amount is large (> $10,000). Sent for Teller Review.");
+                dispose();
+                new CustomerDashboard(uiManager);
+            } else if ("INSUFFICIENT".equals(status)) {
+                JOptionPane.showMessageDialog(this, "Error: Insufficient Funds in account " + fromId, "Transaction Failed", JOptionPane.ERROR_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(this, "Error: Transaction failed. Check Account ID.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
         });
         
         gbc.gridy = 7;

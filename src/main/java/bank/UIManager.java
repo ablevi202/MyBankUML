@@ -1,27 +1,23 @@
 package bank;
 
-import java.util.UUID; // Required for generating unique Transaction IDs
+import java.util.List;
+import java.util.UUID;
 
 public class UIManager {
-    private DatabaseManager dbManager; // Reference to the Database
-    private String currentUser; // Stores the currently logged-in username
+    private DatabaseManager dbManager; 
+    private String currentUser; 
 
     public UIManager() {
-        // 1. Initialize the Database connection
         this.dbManager = new DatabaseManager();
-        
-        // 2. Seed Data (So you can login immediately)
         seedDummyData();
     }
 
     private void seedDummyData() {
-        // Create default users
-        dbManager.saveUser("test", "123", "CUSTOMER", "Test Customer");
-        dbManager.saveUser("teller", "123", "TELLER", "Branch Teller");
-        dbManager.saveUser("admin", "123", "ADMIN", "System Administrator");
-
-        // --- NEW: Seed a real account so you can test Deposit/Withdrawal ---
-        // Account ID: 853013 (matches your UI mock data), Balance: $5000.00
+        // Correct 7 arguments (user, pass, role, name, dob, phone, email)
+        dbManager.saveUser("test", "123", "CUSTOMER", "Test Customer", "2000-01-01", "555-1234", "test@bank.com");
+        dbManager.saveUser("teller", "123", "TELLER", "Branch Teller", "1990-05-20", "555-5678", "teller@bank.com");
+        dbManager.saveUser("admin", "123", "ADMIN", "System Administrator", "1985-11-15", "555-9999", "admin@bank.com");
+        
         dbManager.saveAccount("853013", "test", "Chequing", 5000.00);
     }
 
@@ -36,9 +32,7 @@ public class UIManager {
     }
 
     public String getDashboardType(String username) {
-        if (username.startsWith("admin")) return "ADMIN";
-        if (username.startsWith("teller")) return "TELLER";
-        return "CUSTOMER";
+        return dbManager.getUserRole(username);
     }
 
     public String getCurrentUserRole() {
@@ -55,107 +49,133 @@ public class UIManager {
         System.out.println("User logged out.");
     }
 
-    // --- REAL DATA OPERATIONS (Updated) ---
+    // --- REAL DATA OPERATIONS ---
 
-    public void createCustomerAccount(String name, String dob, String type) {
-        // 1. Generate a simple username (in real app, check for duplicates)
+    // FIXED: Signature now correctly accepts 6 custom fields (DOB, Phone, Email, Password, Name, Type)
+    public boolean createCustomerAccount(String name, String dob, String type, String phone, String email, String password) {
         String username = name.toLowerCase().replace(" ", "");
         
-        // 2. Save the User Profile
-        dbManager.saveUser(username, "123", "CUSTOMER", name);
+        if (dbManager.userExists(username)) {
+            System.out.println("Error: User " + username + " already exists.");
+            return false; // Failed
+        }
+
+        // Save User (7 arguments)
+        dbManager.saveUser(username, password, "CUSTOMER", name, dob, phone, email);
         
-        // 3. Generate a Random Account ID
+        // Create Account
         String newAccId = String.valueOf((int)(Math.random() * 1000000));
-        
-        // 4. Save the Account with 0.0 Balance
         dbManager.saveAccount(newAccId, username, type, 0.0);
         
-        System.out.println("Created " + type + " account #" + newAccId + " for " + name);
+        System.out.println("Created Customer: " + username + " with Account #" + newAccId);
+        return true; // Success
     }
 
-    public void processDeposit(String accountId, String amountStr) {
+    // Helper for legacy calls
+    public void createCustomerAccount(String name, String dob, String type) {
+        createCustomerAccount(name, dob, type, "N/A", "N/A", "123");
+    }
+
+    public void createNewAccount(String username, String type) {
+        String newAccId = String.valueOf((int)(Math.random() * 1000000));
+        dbManager.saveAccount(newAccId, username, type, 0.0);
+        System.out.println("Added new " + type + " account #" + newAccId + " to customer " + username);
+    }
+
+    public void createEmployee(String username, String password) {
+        // Save as TELLER role (Passing N/A for DOB, Phone, Email)
+        dbManager.saveUser(username, password, "TELLER", username, "N/A", "N/A", "N/A");
+        System.out.println("Created new employee: " + username);
+    }
+
+    // --- TRANSACTIONS (RISK & BALANCE LOGIC) ---
+
+    public String processDeposit(String accountId, String amountStr) {
         try {
-            // 1. Parse Amount (Remove '$' if present)
             double amount = Double.parseDouble(amountStr.replace("$", "").trim());
-            
-            // 2. Get Current Balance from DB
+            if (amount > 10000) {
+                String txId = UUID.randomUUID().toString().substring(0, 8);
+                dbManager.saveTransaction(txId, "DEPOSIT", amount, null, accountId, "PENDING_REVIEW");
+                return "PENDING";
+            }
             double currentBalance = dbManager.getBalance(accountId);
-            
-            // 3. Calculate New Balance
             double newBalance = currentBalance + amount;
-            
-            // 4. Save Transaction Record
             String txId = UUID.randomUUID().toString().substring(0, 8);
             dbManager.saveTransaction(txId, "DEPOSIT", amount, null, accountId, "COMPLETED");
-            
-            // 5. Update Account Balance
             dbManager.updateBalance(accountId, newBalance);
-            
-            System.out.println("Success: Deposited $" + amount + ". New Balance: $" + newBalance);
-            
-        } catch (NumberFormatException e) {
-            System.out.println("Error: Invalid amount format.");
-        }
+            return "SUCCESS";
+        } catch (NumberFormatException e) { return "ERROR"; }
     }
 
-    public void processWithdrawal(String accountId, String amountStr) {
+    public String processWithdrawal(String accountId, String amountStr) {
         try {
             double amount = Double.parseDouble(amountStr.replace("$", "").trim());
+            if (amount > 10000) {
+                String txId = UUID.randomUUID().toString().substring(0, 8);
+                dbManager.saveTransaction(txId, "WITHDRAWAL", amount, accountId, null, "PENDING_REVIEW");
+                return "PENDING";
+            }
             double currentBalance = dbManager.getBalance(accountId);
-            
             if (currentBalance >= amount) {
                 double newBalance = currentBalance - amount;
-                
                 String txId = UUID.randomUUID().toString().substring(0, 8);
                 dbManager.saveTransaction(txId, "WITHDRAWAL", amount, accountId, null, "COMPLETED");
                 dbManager.updateBalance(accountId, newBalance);
-                
-                System.out.println("Success: Withdrew $" + amount + ". New Balance: $" + newBalance);
+                return "SUCCESS";
             } else {
-                System.out.println("Error: Insufficient Funds. Balance is $" + currentBalance);
+                return "INSUFFICIENT";
             }
-        } catch (NumberFormatException e) {
-            System.out.println("Error: Invalid amount format.");
+        } catch (NumberFormatException e) { return "ERROR"; }
+    }
+
+    public String performTransfer(String fromId, String toId, String amountStr) {
+        try {
+            double amount = Double.parseDouble(amountStr.replace("$", "").trim());
+            if (amount > 10000) {
+                String txId = UUID.randomUUID().toString().substring(0,8);
+                dbManager.saveTransaction(txId, "TRANSFER", amount, fromId, toId, "PENDING_REVIEW");
+                return "PENDING";
+            }
+            if (dbManager.getBalance(fromId) >= amount) {
+                if (dbManager.transfer(fromId, toId, amount)) {
+                    String txId = UUID.randomUUID().toString().substring(0,8);
+                    dbManager.saveTransaction(txId, "TRANSFER", amount, fromId, toId, "COMPLETED");
+                    return "SUCCESS";
+                } else {
+                    return "ERROR";
+                }
+            } else {
+                return "INSUFFICIENT";
+            }
+        } catch (Exception e) { return "ERROR"; }
+    }
+
+    // --- UI DATA RETRIEVAL ---
+    public List<String[]> getUserAccounts() { return dbManager.getUserAccounts(currentUser); }
+    public List<String[]> getAccountHistory(String accountId) { return dbManager.getTransactionHistory(accountId); }
+    public List<String[]> getCustomerAccounts(String username) { return dbManager.getUserAccounts(username); }
+    public String searchCustomers(String criteria, String keyword) { return dbManager.findUser(criteria, keyword); }
+    public boolean removeEmployee(String username) { return !username.equals("admin") && dbManager.deleteUser(username); }
+    public boolean activateEmployee(String username) { return dbManager.activateUser(username); }
+    public String searchEmployees(String criteria, String keyword) { return dbManager.findEmployees(criteria, keyword); }
+    public String searchAccounts(String criteria, String keyword) { return dbManager.findAccounts(criteria, keyword); }
+    public double getAccountBalance(String accountId) { return dbManager.getBalance(accountId); }
+    public String getFormattedBalance(String accountId) { return String.format("$%.2f", getAccountBalance(accountId)); }
+    public List<String[]> getPendingTransactions() { return dbManager.getPendingTransactions(); }
+
+    public void approveTransaction(String transactionID) {
+        double amount = dbManager.getTransactionAmount(transactionID);
+        String[] parties = dbManager.getTransactionParties(transactionID);
+        if (parties != null) {
+            boolean success = false;
+            if (parties[0] != null && parties[1] != null) success = dbManager.transfer(parties[0], parties[1], amount);
+            else if (parties[1] != null) { double cur = dbManager.getBalance(parties[1]); dbManager.updateBalance(parties[1], cur + amount); success = true; }
+            else if (parties[0] != null) { double cur = dbManager.getBalance(parties[0]); if (cur >= amount) { dbManager.updateBalance(parties[0], cur - amount); success = true; } }
+            if (success) dbManager.updateTransactionStatus(transactionID, "COMPLETED");
         }
     }
 
-    // --- MOCK OPERATIONS (Keep these for UI navigation until DB logic is ready) ---
-
-    public boolean removeEmployee(String username) {
-        return !username.equals("admin"); 
-    }
-
-    public boolean activateEmployee(String username) {
-        return true;
-    }
-
-    public String searchEmployees(String criteria, String keyword) {
-        return "Found 1 employee: " + keyword + " (Active)";
-    }
-
-    public String searchAccounts(String criteria, String keyword) {
-        // In the future: dbManager.findAccount(keyword)...
-        return "ID: 853013, Customer: Macy Sorenson\nPhone: 555-0129, Type: Chequing";
-    }
-
-    public String searchCustomers(String criteria, String keyword) {
-        return "Found Customer: " + keyword + " (Matches " + criteria + ")";
-    }
-
-    public void approveTransaction(String transactionID) {
-        System.out.println("Transaction " + transactionID + " APPROVED.");
-    }
-
     public void denyTransaction(String transactionID) {
-        System.out.println("Transaction " + transactionID + " DENIED.");
-    }
-    public double getAccountBalance(String accountId) {
-        return dbManager.getBalance(accountId);
-    }
-
-    // Helper to get a formatted string (e.g., "$5000.00")
-    public String getFormattedBalance(String accountId) {
-        double balance = getAccountBalance(accountId);
-        return String.format("$%.2f", balance);
+        dbManager.updateTransactionStatus(transactionID, "CANCELLED");
     }
 }

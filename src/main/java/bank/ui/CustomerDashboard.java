@@ -6,6 +6,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
+import java.util.List;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -30,26 +31,32 @@ public class CustomerDashboard extends JFrame {
         gbc.insets = new Insets(10, 10, 10, 10);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        // 1. Welcome Message
+        // 1. Welcome
         JLabel welcomeLabel = new JLabel("Welcome " + uiManager.getCurrentUserName() + "!", SwingConstants.CENTER);
         welcomeLabel.setFont(new Font("Arial", Font.BOLD, 18));
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbc.gridwidth = 2;
+        gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
         add(welcomeLabel, gbc);
 
-        // 2. Chequing Account Section (REAL DATA)
-        // We use the ID "853013" which was seeded in UIManager
-        String chequingBalance = uiManager.getFormattedBalance("853013"); 
-        addAccountRow(gbc, 1, "Chequing Account (853013)", chequingBalance, "View Chequing History");
-
-        // 3. Savings Account Section (REAL DATA)
-        // Using a dummy ID "999999" which will return 0.00 since it doesn't exist yet
-        String savingsBalance = uiManager.getFormattedBalance("999999");
-        addAccountRow(gbc, 2, "Savings Account (999999)", savingsBalance, "View Savings History");
-
-        // ... (Rest of the file remains the same: Action Buttons, Logout) ...
+        // 2. DYNAMIC ACCOUNT LOADING
+        // Fetches accounts from DB instead of hardcoded IDs
+        List<String[]> accounts = uiManager.getUserAccounts();
         
+        int row = 1;
+        if (accounts.isEmpty()) {
+            gbc.gridy = row++;
+            JLabel noAcc = new JLabel("No accounts found.", SwingConstants.CENTER);
+            add(noAcc, gbc);
+        } else {
+            for (String[] acc : accounts) {
+                String id = acc[0];
+                String type = acc[1];
+                String balance = "$" + acc[2];
+                
+                addAccountRow(gbc, row++, type + " (" + id + ")", balance, "View History", id);
+            }
+        }
+
+        // 3. Action Buttons
         JButton transButton = new JButton("Make a Transaction");
         transButton.setBackground(new Color(144, 238, 144)); 
         transButton.setOpaque(true);
@@ -59,7 +66,7 @@ public class CustomerDashboard extends JFrame {
             new TransactionPage(uiManager);
         });
         
-        gbc.gridy = 3;
+        gbc.gridy = row++;
         gbc.gridwidth = 2;
         add(transButton, gbc);
 
@@ -73,19 +80,18 @@ public class CustomerDashboard extends JFrame {
             new LoginScreen(uiManager).setVisible(true);
         });
 
-        gbc.gridy = 4;
+        gbc.gridy = row;
         add(logoutButton, gbc);
 
         setVisible(true);
     }
 
-    // ... (Keep addAccountRow helper method exactly as it was) ...
-    private void addAccountRow(GridBagConstraints gbc, int row, String accountName, String balance, String buttonText) {
+    private void addAccountRow(GridBagConstraints gbc, int row, String name, String balance, String btnText, String accountId) {
         gbc.gridwidth = 1;
         gbc.gridy = row;
         
         JPanel textPanel = new JPanel(new GridLayout(2, 1));
-        JLabel nameLbl = new JLabel(accountName, SwingConstants.LEFT);
+        JLabel nameLbl = new JLabel(name, SwingConstants.LEFT);
         nameLbl.setFont(new Font("Arial", Font.BOLD, 14));
         JLabel balLbl = new JLabel(balance, SwingConstants.LEFT);
         textPanel.add(nameLbl);
@@ -95,14 +101,15 @@ public class CustomerDashboard extends JFrame {
         gbc.weightx = 0.7;
         add(textPanel, gbc);
 
-        JButton historyBtn = new JButton(buttonText);
+        JButton historyBtn = new JButton(btnText);
         historyBtn.setBackground(new Color(173, 216, 230));
         historyBtn.setOpaque(true);
         historyBtn.setBorderPainted(false);
         
         historyBtn.addActionListener(e -> {
             dispose();
-            new AccountHistoryPage(uiManager, accountName);
+            // Pass the REAL account ID to the history page
+            new AccountHistoryPage(uiManager, accountId); 
         });
         
         gbc.gridx = 1;
@@ -110,5 +117,6 @@ public class CustomerDashboard extends JFrame {
         add(historyBtn, gbc);
         
         gbc.weightx = 0;
+        gbc.gridx = 0; // Reset for next component
     }
 }

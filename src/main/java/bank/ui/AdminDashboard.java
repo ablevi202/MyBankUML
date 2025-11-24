@@ -30,8 +30,10 @@ public class AdminDashboard extends JFrame {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.gridx = 0;
 
-        // 1. Welcome Message
-        JLabel welcomeLabel = new JLabel("Welcome Admin!", SwingConstants.CENTER);
+        // 1. Welcome Message (DYNAMIC)
+        // Fetches the actual username from the active session
+        String welcomeText = "Welcome " + uiManager.getCurrentUserName() + "!";
+        JLabel welcomeLabel = new JLabel(welcomeText, SwingConstants.CENTER);
         welcomeLabel.setFont(new Font("Arial", Font.BOLD, 18));
         gbc.gridy = 0;
         add(welcomeLabel, gbc);
@@ -70,7 +72,7 @@ public class AdminDashboard extends JFrame {
         logoutButton.addActionListener(e -> {
             uiManager.logout();
             dispose();
-            new LoginScreen(uiManager);
+            new LoginScreen(uiManager).setVisible(true);
         });
         
         gbc.gridy = 4;

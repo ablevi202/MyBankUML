@@ -18,9 +18,11 @@ import bank.UIManager;
 
 public class TellerTransactionPage extends JFrame {
     private UIManager uiManager;
+    private String fromAccountId; // The account initiating the transfer
 
-    public TellerTransactionPage(UIManager manager) {
+    public TellerTransactionPage(UIManager manager, String accountId) {
         this.uiManager = manager;
+        this.fromAccountId = accountId;
 
         setTitle("MyBankUML - Make Transaction");
         setSize(500, 400);
@@ -48,11 +50,13 @@ public class TellerTransactionPage extends JFrame {
         gbc.gridx = 1;
         add(typeBox, gbc);
 
-        // 3. From Account (Auto-filled or selected)
+        // 3. From Account (Auto-filled with the current account ID)
         gbc.gridy = 2;
         gbc.gridx = 0;
         add(new JLabel("From Account ID:"), gbc);
-        JTextField fromField = new JTextField("853031"); // Pre-filled for demo
+        
+        JTextField fromField = new JTextField(fromAccountId); 
+        fromField.setEditable(false); // Lock this field so they stay on the correct account context
         gbc.gridx = 1;
         add(fromField, gbc);
 
@@ -74,13 +78,35 @@ public class TellerTransactionPage extends JFrame {
 
         // 6. Submit Button
         JButton submitBtn = new JButton("Complete Transaction");
-        submitBtn.setBackground(new Color(144, 238, 144));
+        submitBtn.setBackground(new Color(144, 238, 144)); // Green
         submitBtn.setOpaque(true);
         submitBtn.setBorderPainted(false);
+        
         submitBtn.addActionListener(e -> {
-            JOptionPane.showMessageDialog(this, "Transaction Successful!");
-            dispose();
-            new TellerAccountPage(uiManager); // Go back to account view
+            String toAcc = toField.getText();
+            String amount = amountField.getText();
+            
+            if (toAcc.isEmpty() || amount.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Please fill in all fields.");
+                return;
+            }
+
+            // --- CALL REAL BACKEND & CHECK STATUS ---
+            String status = uiManager.performTransfer(fromAccountId, toAcc, amount);
+            
+            if ("SUCCESS".equals(status)) {
+                JOptionPane.showMessageDialog(this, "Transaction Successful!");
+                dispose();
+                new TellerAccountPage(uiManager, fromAccountId);
+            } else if ("PENDING".equals(status)) {
+                JOptionPane.showMessageDialog(this, "Transaction queued for review (Amount > $10,000).");
+                dispose();
+                new TellerAccountPage(uiManager, fromAccountId);
+            } else if ("INSUFFICIENT".equals(status)) {
+                JOptionPane.showMessageDialog(this, "Error: Insufficient Funds!", "Failed", JOptionPane.ERROR_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(this, "Error: Transaction failed (Check Account ID).", "Error", JOptionPane.ERROR_MESSAGE);
+            }
         });
 
         gbc.gridy = 5;
@@ -93,8 +119,10 @@ public class TellerTransactionPage extends JFrame {
         JButton cancelBtn = new JButton("Cancel");
         cancelBtn.addActionListener(e -> {
             dispose();
-            new TellerAccountPage(uiManager);
+            // Return to the specific account page
+            new TellerAccountPage(uiManager, fromAccountId);
         });
+        
         gbc.gridy = 6;
         gbc.insets = new Insets(0, 10, 10, 10);
         add(cancelBtn, gbc);

@@ -2,12 +2,14 @@ package bank.ui;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.util.List;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -40,13 +42,28 @@ public class ReviewPendingTransactionsPage extends JFrame {
         headerLabel.setBorder(BorderFactory.createEmptyBorder(15, 10, 15, 10));
         add(headerLabel, BorderLayout.NORTH);
 
-        // 2. Scrollable List
+        // 2. Scrollable List of Transactions
         JPanel listPanel = new JPanel();
         listPanel.setLayout(new BoxLayout(listPanel, BoxLayout.Y_AXIS));
         
-        addTransactionCard(listPanel, "851294", "Harlan Thrombey", "$64,000,000.00");
-        addTransactionCard(listPanel, "823633", "Simon Reichard", "$6,000.00");
-        addTransactionCard(listPanel, "932753", "Marta Cabrera", "$150,000.00");
+        // --- REAL DATA LOADING ---
+        List<String[]> pendingList = uiManager.getPendingTransactions();
+        
+        if (pendingList.isEmpty()) {
+            JLabel emptyLabel = new JLabel("No pending transactions found.");
+            emptyLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+            listPanel.add(Box.createVerticalStrut(20));
+            listPanel.add(emptyLabel);
+        } else {
+            for (String[] tx : pendingList) {
+                // Data format from DB: [ID, From_Account, Amount, Type]
+                String id = tx[0];
+                String customer = tx[1]; // Shows Account/User ID
+                String amount = tx[2];   // Already formatted with '$'
+                
+                addTransactionCard(listPanel, id, customer, amount);
+            }
+        }
 
         JScrollPane scrollPane = new JScrollPane(listPanel);
         add(scrollPane, BorderLayout.CENTER);
@@ -78,17 +95,21 @@ public class ReviewPendingTransactionsPage extends JFrame {
         JPanel card = new JPanel(new GridBagLayout());
         card.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1));
         card.setMaximumSize(new Dimension(550, 100));
+        card.setBackground(Color.WHITE); // Make cards stand out
         
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 10, 5, 10);
         gbc.anchor = GridBagConstraints.WEST;
 
-        JLabel infoLabel = new JLabel("<html>ID: " + id + ", Customer: " + name + "<br/>Wants to transfer " + amount + "</html>");
+        // Details Section
+        JLabel infoLabel = new JLabel("<html><b>ID:</b> " + id + " &nbsp;&nbsp; <b>From:</b> " + name + "<br/><b>Request:</b> Transfer " + amount + "</html>");
         gbc.gridx = 0;
         gbc.weightx = 1.0;
         card.add(infoLabel, gbc);
 
+        // Buttons Section
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        btnPanel.setBackground(Color.WHITE);
         
         JButton approveBtn = new JButton("Approve");
         approveBtn.setBackground(new Color(144, 238, 144)); // Green
@@ -96,7 +117,7 @@ public class ReviewPendingTransactionsPage extends JFrame {
         approveBtn.setBorderPainted(false);
         approveBtn.addActionListener(e -> {
             uiManager.approveTransaction(id);
-            container.remove(card);
+            container.remove(card); // Remove from UI
             container.revalidate();
             container.repaint();
             JOptionPane.showMessageDialog(this, "Transaction " + id + " Approved.");
@@ -124,6 +145,6 @@ public class ReviewPendingTransactionsPage extends JFrame {
         card.add(btnPanel, gbc);
 
         container.add(card);
-        container.add(Box.createRigidArea(new Dimension(0, 10)));
+        container.add(Box.createRigidArea(new Dimension(0, 10))); // Spacing
     }
 }

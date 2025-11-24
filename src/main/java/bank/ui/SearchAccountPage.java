@@ -40,11 +40,11 @@ public class SearchAccountPage extends JFrame {
         gbc.gridy = 0;
         add(headerLabel, gbc);
 
-        // 2. Search Criteria (Attributes specific to Account Ledgers)
+        // 2. Search Criteria
         gbc.gridy = 1;
         add(new JLabel("Search accounts by:"), gbc);
 
-        String[] criteria = {"Name", "Account ID", "Phone"};
+        String[] criteria = {"Account ID", "Name", "Phone"};
         JComboBox<String> criteriaBox = new JComboBox<>(criteria);
         gbc.gridy = 2;
         add(criteriaBox, gbc);
@@ -65,8 +65,10 @@ public class SearchAccountPage extends JFrame {
         searchButton.setForeground(Color.WHITE);
         
         searchButton.addActionListener(e -> {
-            // Show the specific Account Result Panel
-            showResultPanel(keywordField.getText());
+            String selectedCriteria = (String) criteriaBox.getSelectedItem();
+            String keyword = keywordField.getText();
+            // Show the specific Account Result Panel with REAL data
+            showResultPanel(selectedCriteria, keyword);
         });
 
         gbc.gridy = 5;
@@ -90,7 +92,7 @@ public class SearchAccountPage extends JFrame {
     }
 
     // --- RESULT VIEW: Focuses on Financial Details ---
-    private void showResultPanel(String keyword) {
+    private void showResultPanel(String criteria, String keyword) {
         getContentPane().removeAll();
         setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
@@ -105,33 +107,59 @@ public class SearchAccountPage extends JFrame {
         gbc.gridwidth = 2;
         add(header, gbc);
 
-        // Account Details Card (Visually distinct - Light Blue Background)
+        // Fetch Data from Backend
+        String resultString = uiManager.searchAccounts(criteria, keyword);
+        boolean found = resultString.startsWith("ID:");
+
+        // Result Card
         JPanel accountCard = new JPanel(new GridLayout(3, 1));
         accountCard.setBorder(BorderFactory.createTitledBorder("Account Details"));
         accountCard.setBackground(new Color(240, 248, 255)); // Alice Blue
         
-        // Mock Data focusing on the Asset (Account) rather than the Person
-        accountCard.add(new JLabel("Account ID: 853013")); 
-        accountCard.add(new JLabel("Type: Chequing"));
-        accountCard.add(new JLabel("Current Balance: $912.98")); 
+        String accountId = "";
+
+        if (found) {
+            // Parse the string returned by DatabaseManager
+            // Format: "ID: <id>, Type: <type>, Owner: <owner>, Balance: $<balance>"
+            try {
+                String[] parts = resultString.split(", ");
+                accountId = parts[0].substring(4); // Extract ID
+                String type = parts[1].substring(6);
+                String balance = parts[3].substring(9);
+
+                accountCard.add(new JLabel("Account ID: " + accountId)); 
+                accountCard.add(new JLabel("Type: " + type));
+                accountCard.add(new JLabel("Current Balance: " + balance)); 
+            } catch (Exception e) {
+                accountCard.add(new JLabel("Error parsing account data."));
+            }
+        } else {
+            accountCard.add(new JLabel(resultString)); // "No account found."
+        }
         
         gbc.gridy = 1;
         gbc.gridwidth = 2;
         add(accountCard, gbc);
 
-        // Action Button
-        JButton viewBtn = new JButton("Manage This Account");
-        viewBtn.setBackground(new Color(173, 216, 230)); // Light Blue
-        viewBtn.setOpaque(true);
-        viewBtn.setBorderPainted(false);
-        viewBtn.addActionListener(e -> {
-            dispose();
-            // Go to the Teller Account Action Page (Deposit/Withdraw)
-            new TellerAccountPage(uiManager);
-        });
-        
-        gbc.gridy = 2;
-        add(viewBtn, gbc);
+        // Action Buttons
+        if (found) {
+            JButton viewBtn = new JButton("Manage This Account");
+            viewBtn.setBackground(new Color(173, 216, 230)); // Light Blue
+            viewBtn.setOpaque(true);
+            viewBtn.setBorderPainted(false);
+            
+            // Final variable for lambda
+            final String targetId = accountId;
+            viewBtn.addActionListener(e -> {
+                dispose();
+                // Go to the Teller Account Action Page with the SPECIFIC ID
+                // Note: You will need to update TellerAccountPage constructor to accept an ID!
+                new TellerAccountPage(uiManager, targetId);
+            });
+            
+            gbc.gridy = 2;
+            add(viewBtn, gbc);
+        }
 
         // Back Button
         JButton backButton = new JButton("Back to Search");

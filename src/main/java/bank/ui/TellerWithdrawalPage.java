@@ -17,9 +17,11 @@ import bank.UIManager;
 
 public class TellerWithdrawalPage extends JFrame {
     private UIManager uiManager;
+    private String accountId; // The specific account for withdrawal
 
-    public TellerWithdrawalPage(UIManager manager) {
+    public TellerWithdrawalPage(UIManager manager, String accountId) {
         this.uiManager = manager;
+        this.accountId = accountId;
 
         setTitle("MyBankUML - Withdrawal Menu");
         setSize(500, 300);
@@ -31,23 +33,29 @@ public class TellerWithdrawalPage extends JFrame {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.gridx = 0;
 
-        // 1. Header (Matches "Withdrawal Menu")
+        // 1. Header
         JLabel headerLabel = new JLabel("Withdrawal Menu", SwingConstants.CENTER);
         headerLabel.setFont(new Font("Arial", Font.BOLD, 16));
         gbc.gridy = 0;
         add(headerLabel, gbc);
 
-        // 2. Amount Label & Field
+        // 2. Info Label
+        JLabel accountLabel = new JLabel("Withdrawing from Account: " + accountId, SwingConstants.CENTER);
+        accountLabel.setFont(new Font("Arial", Font.PLAIN, 12));
         gbc.gridy = 1;
+        add(accountLabel, gbc);
+
+        // 3. Amount Label & Field
+        gbc.gridy = 2;
         JLabel amountLbl = new JLabel("Withdrawal Amount:", SwingConstants.LEFT);
         amountLbl.setFont(new Font("Arial", Font.BOLD, 12));
         add(amountLbl, gbc);
 
         JTextField amountField = new JTextField("$0.00");
-        gbc.gridy = 2;
+        gbc.gridy = 3;
         add(amountField, gbc);
 
-        // 3. Complete Button (Green)
+        // 4. Complete Button
         JButton completeButton = new JButton("Complete Withdrawal");
         completeButton.setBackground(new Color(144, 238, 144)); // Light Green
         completeButton.setOpaque(true);
@@ -55,19 +63,28 @@ public class TellerWithdrawalPage extends JFrame {
         
         completeButton.addActionListener(e -> {
             String amount = amountField.getText();
-            // Call Facade
-            uiManager.processWithdrawal("853031", amount); // Mock Account ID
+            String status = uiManager.processWithdrawal(accountId, amount);
             
-            JOptionPane.showMessageDialog(this, "Withdrawal Successful!");
-            dispose();
-            new TellerAccountPage(uiManager);
+            if ("SUCCESS".equals(status)) {
+                JOptionPane.showMessageDialog(this, "Withdrawal Successful!");
+                dispose();
+                new TellerAccountPage(uiManager, accountId);
+            } else if ("PENDING".equals(status)) {
+                JOptionPane.showMessageDialog(this, "Large Withdrawal Queued for Review.");
+                dispose();
+                new TellerAccountPage(uiManager, accountId);
+            } else if ("INSUFFICIENT".equals(status)) {
+                JOptionPane.showMessageDialog(this, "Error: Insufficient Funds.", "Failed", JOptionPane.ERROR_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(this, "Error: Invalid Amount.", "Failed", JOptionPane.ERROR_MESSAGE);
+            }
         });
 
-        gbc.gridy = 3;
+        gbc.gridy = 4;
         gbc.insets = new Insets(20, 10, 10, 10);
         add(completeButton, gbc);
 
-        // 4. Back Button (Red)
+        // 5. Back Button
         JButton backButton = new JButton("Back to Account");
         backButton.setBackground(new Color(255, 102, 102)); // Light Red
         backButton.setOpaque(true);
@@ -75,13 +92,10 @@ public class TellerWithdrawalPage extends JFrame {
         
         backButton.addActionListener(e -> {
             dispose();
-            new TellerAccountPage(uiManager);
+            new TellerAccountPage(uiManager, accountId);
         });
 
-        // Place Back button at top-right or bottom? 
-        // Report Page 57 shows it at Top Right, but standard GridBag places it easier at bottom.
-        // We will place it at the bottom for consistency with other screens.
-        gbc.gridy = 4;
+        gbc.gridy = 5;
         gbc.fill = GridBagConstraints.NONE;
         gbc.anchor = GridBagConstraints.CENTER;
         add(backButton, gbc);

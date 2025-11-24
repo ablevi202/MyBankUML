@@ -9,6 +9,7 @@ import java.awt.Insets;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.SwingConstants;
 
 import bank.UIManager;
 
@@ -28,7 +29,7 @@ public class AdminStatusPage extends JFrame {
         gbc.gridx = 0;
 
         // 1. Success Message
-        JLabel successLabel = new JLabel("Account creation was successful.");
+        JLabel successLabel = new JLabel("Account creation was successful.", SwingConstants.CENTER);
         successLabel.setFont(new Font("Arial", Font.BOLD, 16));
         gbc.gridy = 0;
         gbc.anchor = GridBagConstraints.CENTER;

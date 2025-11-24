@@ -9,6 +9,7 @@ import java.awt.Insets;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
@@ -38,7 +39,7 @@ public class CreateEmployeePage extends JFrame {
         gbc.gridwidth = 2;
         add(headerLabel, gbc);
 
-        // 2. Back Button (Top Right Placeholder / Bottom preferred)
+        // 2. Back Button
         JButton backButton = new JButton("Back to Dashboard");
         backButton.setBackground(new Color(255, 102, 102)); // Light Red
         backButton.setOpaque(true);
@@ -83,20 +84,29 @@ public class CreateEmployeePage extends JFrame {
         enterButton.addActionListener(e -> {
             String newUser = userField.getText();
             String newPass = new String(passField.getPassword());
-            // Logic to create employee would go here
+            
+            // Basic Validation
+            if (newUser.isEmpty() || newPass.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Please fill in both fields.");
+                return;
+            }
+
+            // --- CONNECT TO BACKEND ---
+            // Saves the new Teller to the database
+            uiManager.createEmployee(newUser, newPass);
             
             dispose();
             new AdminStatusPage(uiManager, newUser, newPass);
         });
 
         gbc.gridy = 5;
-        gbc.gridwidth = 1; // <--- FIXED: Was 'width', now 'gridwidth'
+        gbc.gridwidth = 1;
         gbc.fill = GridBagConstraints.NONE;
         gbc.anchor = GridBagConstraints.CENTER;
         gbc.insets = new Insets(20, 10, 10, 10);
         add(enterButton, gbc);
         
-        // Adding the Back Button at the bottom for consistency
+        // Back Button position
         gbc.gridy = 6;
         add(backButton, gbc);
 

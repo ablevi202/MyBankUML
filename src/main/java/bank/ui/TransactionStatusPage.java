@@ -15,7 +15,8 @@ import bank.UIManager;
 public class TransactionStatusPage extends JFrame {
     private UIManager uiManager;
 
-    public TransactionStatusPage(UIManager manager, String toAccount, String amount) {
+    // Updated Constructor: Added 'fromAccount' parameter
+    public TransactionStatusPage(UIManager manager, String fromAccount, String toAccount, String amount) {
         this.uiManager = manager;
 
         setTitle("MyBankUML - Transaction Status");
@@ -35,8 +36,8 @@ public class TransactionStatusPage extends JFrame {
         add(successLabel, gbc);
 
         // 2. Details
-        // Matches text from Report Page 53: "$100.00 from your account 501428 to account 481292."
-        String detailsText = amount + " from your account 501428 to account " + toAccount + ".";
+        // Now uses the real 'fromAccount' passed from the previous page
+        String detailsText = amount + " from your account " + fromAccount + " to account " + toAccount + ".";
         JLabel detailsLabel = new JLabel(detailsText);
         detailsLabel.setFont(new Font("Arial", Font.PLAIN, 14));
         gbc.gridy = 1;

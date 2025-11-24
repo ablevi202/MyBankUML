@@ -30,7 +30,7 @@ public class LoginScreen extends JFrame {
         // 2. Layout Setup
         setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(10, 10, 10, 10); // Add padding around elements
+        gbc.insets = new Insets(10, 10, 10, 10); // Add padding
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
         // 3. Header Label
@@ -38,32 +38,33 @@ public class LoginScreen extends JFrame {
         headerLabel.setFont(new Font("Arial", Font.BOLD, 14));
         gbc.gridx = 0;
         gbc.gridy = 0;
-        gbc.gridwidth = 2; // Span across both columns
+        gbc.gridwidth = 2;
         add(headerLabel, gbc);
 
         // 4. Username Row
-        gbc.gridwidth = 1; // Reset gridwidth
+        gbc.gridwidth = 1;
         gbc.gridy = 1;
         
-        gbc.gridx = 0; // Label
+        gbc.gridx = 0;
         add(new JLabel("Username:"), gbc);
         
-        gbc.gridx = 1; // Field
+        gbc.gridx = 1;
         JTextField userField = new JTextField(15);
         add(userField, gbc);
 
         // 5. Password Row
         gbc.gridy = 2;
         
-        gbc.gridx = 0; // Label
+        gbc.gridx = 0;
         add(new JLabel("Password:"), gbc);
         
-        gbc.gridx = 1; // Field
+        gbc.gridx = 1;
         JPasswordField passField = new JPasswordField(15);
         add(passField, gbc);
 
         // 6. Enter Button
         JButton loginButton = new JButton("Enter");
+        getRootPane().setDefaultButton(loginButton); // Allow pressing 'Enter' key to login
         
         gbc.gridy = 3;
         gbc.gridx = 0;
@@ -77,12 +78,13 @@ public class LoginScreen extends JFrame {
             String user = userField.getText();
             String pass = new String(passField.getPassword());
             
-            // Validate Credentials via Facade
+            // Validate Credentials via Facade (Connected to DB)
             if (uiManager.handleLogin(user, pass)) {
                 JOptionPane.showMessageDialog(this, "Login Successful!");
-                dispose(); // Close the Login Window
+                dispose(); 
 
                 // Determine Role and Launch Dashboard
+                // Note: Ensure UIManager uses DB roles for this to be 100% dynamic
                 String role = uiManager.getDashboardType(user);
                 
                 if ("ADMIN".equals(role)) {
@@ -94,6 +96,7 @@ public class LoginScreen extends JFrame {
                 }
             } else {
                 JOptionPane.showMessageDialog(this, "Invalid Credentials");
+                passField.setText(""); // Clear password field on failure
             }
         });
 
