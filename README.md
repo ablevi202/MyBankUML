@@ -25,6 +25,7 @@ Currently, the application features a **fully interactive UI** connected to a **
 - **Facade Pattern:** All UI actions route through `UIManager`.
 - **Role-Based Access Control:** Distinct dashboards for different user types.
 - **Standard Java Structure:** Organized in `src/main/java` packages.
+- **Persistence:** SQLite database (`bank.db`) stores all users, accounts, and transactions.
 
 ---
 
@@ -32,7 +33,7 @@ Currently, the application features a **fully interactive UI** connected to a **
 
 ### Prerequisites
 - **Java Development Kit (JDK) 21** or higher.
-- No external libraries (Maven/Lombok) are required to run this version.
+- **SQLite JDBC Driver** (Included in `libs/` folder).
 
 ### Step 1: Clone or Download
 Navigate to the project root folder (`MyBankUML`).
@@ -41,10 +42,10 @@ Navigate to the project root folder (`MyBankUML`).
 Run the following command from the root folder to compile all source files:
 
 ```bash
-javac -sourcepath src/main/java src/main/java/bank/Main.java
+javac -cp "libs/*" -sourcepath src/main/java src/main/java/bank/Main.java
 ```
 ### Step 3: Run
 Launch the application:
 ```bash
-java -cp src/main/java bank.Main
+java -cp "src/main/java:libs/*" bank.Main  
 ```
