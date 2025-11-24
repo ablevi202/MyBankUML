@@ -6,6 +6,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.LocalDateTime;
 
 public class DatabaseManager {
     // The connection string creates a file named 'bank.db' in your project folder
@@ -26,20 +27,18 @@ public class DatabaseManager {
         return conn;
     }
 
-    // 1. Initialize the Database File
     private void createNewDatabase() {
         try (Connection conn = this.connect()) {
             if (conn != null) {
-                // Just connecting creates the file if it doesn't exist
+                // Database created or existing one connected
             }
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
     }
 
-    // 2. Create Tables (Schema)
     private void createTables() {
-        // SQL to create Users table
+        // 1. Users Table
         String sqlUsers = "CREATE TABLE IF NOT EXISTS users ("
                 + "username TEXT PRIMARY KEY,"
                 + "password TEXT NOT NULL,"
@@ -47,7 +46,7 @@ public class DatabaseManager {
                 + "full_name TEXT"
                 + ");";
 
-        // SQL to create Accounts table
+        // 2. Accounts Table
         String sqlAccounts = "CREATE TABLE IF NOT EXISTS accounts ("
                 + "account_id TEXT PRIMARY KEY,"
                 + "owner_username TEXT NOT NULL,"
@@ -56,20 +55,31 @@ public class DatabaseManager {
                 + "FOREIGN KEY (owner_username) REFERENCES users(username)"
                 + ");";
 
+        // 3. Transactions Table
+        String sqlTransactions = "CREATE TABLE IF NOT EXISTS transactions ("
+                + "id TEXT PRIMARY KEY,"
+                + "type TEXT NOT NULL,"
+                + "amount REAL,"
+                + "from_acc TEXT,"
+                + "to_acc TEXT,"
+                + "status TEXT,"
+                + "timestamp TEXT"
+                + ");";
+
         try (Connection conn = this.connect();
              Statement stmt = conn.createStatement()) {
             stmt.execute(sqlUsers);
             stmt.execute(sqlAccounts);
-            // Add tables for Transactions and AuditLogs here as per design...
+            stmt.execute(sqlTransactions);
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
     }
 
-    // 3. Example Method: Save a User
-    public void saveUser(String username, String password, String role, String fullName) {
-        String sql = "INSERT INTO users(username, password, role, full_name) VALUES(?,?,?,?)";
+    // --- DATA SAVING METHODS (These were missing) ---
 
+    public void saveUser(String username, String password, String role, String fullName) {
+        String sql = "INSERT OR REPLACE INTO users(username, password, role, full_name) VALUES(?,?,?,?)";
         try (Connection conn = this.connect();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, username);
@@ -77,24 +87,78 @@ public class DatabaseManager {
             pstmt.setString(3, role);
             pstmt.setString(4, fullName);
             pstmt.executeUpdate();
-            System.out.println("User saved: " + username);
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
     }
 
-    // 4. Example Method: Validate Login
+    public void saveAccount(String accountId, String owner, String type, double balance) {
+        String sql = "INSERT OR REPLACE INTO accounts(account_id, owner_username, type, balance) VALUES(?,?,?,?)";
+        try (Connection conn = this.connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, accountId);
+            pstmt.setString(2, owner);
+            pstmt.setString(3, type);
+            pstmt.setDouble(4, balance);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    public void saveTransaction(String id, String type, double amount, String from, String to, String status) {
+        String sql = "INSERT INTO transactions(id, type, amount, from_acc, to_acc, status, timestamp) VALUES(?,?,?,?,?,?,?)";
+        try (Connection conn = this.connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, id);
+            pstmt.setString(2, type);
+            pstmt.setDouble(3, amount);
+            pstmt.setString(4, from);
+            pstmt.setString(5, to);
+            pstmt.setString(6, status);
+            pstmt.setString(7, LocalDateTime.now().toString());
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
     public boolean validateLogin(String username, String password) {
         String sql = "SELECT * FROM users WHERE username = ? AND password = ?";
         try (Connection conn = this.connect();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, username);
             pstmt.setString(2, password);
+            return pstmt.executeQuery().next();
+        } catch (SQLException e) {
+            return false;
+        }
+    }
+    
+    public double getBalance(String accountId) {
+        String sql = "SELECT balance FROM accounts WHERE account_id = ?";
+        try (Connection conn = this.connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, accountId);
             ResultSet rs = pstmt.executeQuery();
-            return rs.next(); // Returns true if a record is found
+            if (rs.next()) {
+                return rs.getDouble("balance");
+            }
         } catch (SQLException e) {
             System.out.println(e.getMessage());
-            return false;
+        }
+        return 0.0;
+    }
+
+    public void updateBalance(String accountId, double newBalance) {
+        String sql = "UPDATE accounts SET balance = ? WHERE account_id = ?";
+        try (Connection conn = this.connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setDouble(1, newBalance);
+            pstmt.setString(2, accountId);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
         }
     }
 }
