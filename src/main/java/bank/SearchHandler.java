@@ -20,7 +20,7 @@ public class SearchHandler {
     public String searchEmployees(String criteria, String keyword) {
         return dbManager.findEmployees(criteria, keyword);
     }
-    
+
     public List<String[]> getCustomerAccounts(String username) {
         return dbManager.getUserAccounts(username);
     }

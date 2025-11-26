@@ -10,7 +10,7 @@ public class LoginHandler {
     public boolean validateLogin(String username, String password) {
         return dbManager.validateLogin(username, password);
     }
-    
+
     public String getUserRole(String username) {
         return dbManager.getUserRole(username);
     }
