@@ -51,7 +51,7 @@ public class UIManager {
 
     // --- REAL DATA OPERATIONS ---
 
-    // FIXED: Signature now correctly accepts 6 custom fields (DOB, Phone, Email, Password, Name, Type)
+    // FIXED: Returns boolean (was void)
     public boolean createCustomerAccount(String name, String dob, String type, String phone, String email, String password) {
         String username = name.toLowerCase().replace(" ", "");
         
@@ -60,20 +60,13 @@ public class UIManager {
             return false; // Failed
         }
 
-        // Save User (7 arguments)
         dbManager.saveUser(username, password, "CUSTOMER", name, dob, phone, email);
         
-        // Create Account
         String newAccId = String.valueOf((int)(Math.random() * 1000000));
         dbManager.saveAccount(newAccId, username, type, 0.0);
         
         System.out.println("Created Customer: " + username + " with Account #" + newAccId);
         return true; // Success
-    }
-
-    // Helper for legacy calls
-    public void createCustomerAccount(String name, String dob, String type) {
-        createCustomerAccount(name, dob, type, "N/A", "N/A", "123");
     }
 
     public void createNewAccount(String username, String type) {
@@ -83,13 +76,14 @@ public class UIManager {
     }
 
     public void createEmployee(String username, String password) {
-        // Save as TELLER role (Passing N/A for DOB, Phone, Email)
+        // Save as TELLER role
         dbManager.saveUser(username, password, "TELLER", username, "N/A", "N/A", "N/A");
         System.out.println("Created new employee: " + username);
     }
 
     // --- TRANSACTIONS (RISK & BALANCE LOGIC) ---
 
+    // FIXED: Returns String status
     public String processDeposit(String accountId, String amountStr) {
         try {
             double amount = Double.parseDouble(amountStr.replace("$", "").trim());
@@ -107,6 +101,7 @@ public class UIManager {
         } catch (NumberFormatException e) { return "ERROR"; }
     }
 
+    // FIXED: Returns String status
     public String processWithdrawal(String accountId, String amountStr) {
         try {
             double amount = Double.parseDouble(amountStr.replace("$", "").trim());
@@ -168,9 +163,13 @@ public class UIManager {
         String[] parties = dbManager.getTransactionParties(transactionID);
         if (parties != null) {
             boolean success = false;
+            // Handle Transfers
             if (parties[0] != null && parties[1] != null) success = dbManager.transfer(parties[0], parties[1], amount);
+            // Handle Deposits
             else if (parties[1] != null) { double cur = dbManager.getBalance(parties[1]); dbManager.updateBalance(parties[1], cur + amount); success = true; }
+            // Handle Withdrawals
             else if (parties[0] != null) { double cur = dbManager.getBalance(parties[0]); if (cur >= amount) { dbManager.updateBalance(parties[0], cur - amount); success = true; } }
+            
             if (success) dbManager.updateTransactionStatus(transactionID, "COMPLETED");
         }
     }
