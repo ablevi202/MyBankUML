@@ -15,10 +15,25 @@ import javax.swing.SwingConstants;
 
 import bank.UIManager;
 
+/**
+ * The UI screen for processing cash withdrawals from a specific account.
+ * <p>
+ * This page allows Tellers to debit funds from a customer's account. It handles
+ * validation of the amount and communicates with the {@link UIManager} to execute
+ * the transaction. It supports three outcomes: Success, Insufficient Funds, or
+ * Pending Review (for high-value amounts).
+ * </p>
+ */
 public class TellerWithdrawalPage extends JFrame {
-    private UIManager uiManager;
-    private String accountId; // The specific account for withdrawal
+    private final UIManager uiManager;
+    private final String accountId; // The specific account for withdrawal
 
+    /**
+     * Constructs the Withdrawal form.
+     *
+     * @param manager   The application controller used to process the transaction.
+     * @param accountId The ID of the account from which funds will be withdrawn.
+     */
     public TellerWithdrawalPage(UIManager manager, String accountId) {
         this.uiManager = manager;
         this.accountId = accountId;
@@ -27,25 +42,26 @@ public class TellerWithdrawalPage extends JFrame {
         setSize(500, 300);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
+        
         setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(10, 10, 10, 10);
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.gridx = 0;
 
-        // 1. Header
+        // Page Header
         JLabel headerLabel = new JLabel("Withdrawal Menu", SwingConstants.CENTER);
         headerLabel.setFont(new Font("Arial", Font.BOLD, 16));
         gbc.gridy = 0;
         add(headerLabel, gbc);
 
-        // 2. Info Label
+        // Account Context Info
         JLabel accountLabel = new JLabel("Withdrawing from Account: " + accountId, SwingConstants.CENTER);
         accountLabel.setFont(new Font("Arial", Font.PLAIN, 12));
         gbc.gridy = 1;
         add(accountLabel, gbc);
 
-        // 3. Amount Label & Field
+        // Amount Input
         gbc.gridy = 2;
         JLabel amountLbl = new JLabel("Withdrawal Amount:", SwingConstants.LEFT);
         amountLbl.setFont(new Font("Arial", Font.BOLD, 12));
@@ -55,7 +71,7 @@ public class TellerWithdrawalPage extends JFrame {
         gbc.gridy = 3;
         add(amountField, gbc);
 
-        // 4. Complete Button
+        // Complete Button
         JButton completeButton = new JButton("Complete Withdrawal");
         completeButton.setBackground(new Color(144, 238, 144)); // Light Green
         completeButton.setOpaque(true);
@@ -63,6 +79,8 @@ public class TellerWithdrawalPage extends JFrame {
         
         completeButton.addActionListener(e -> {
             String amount = amountField.getText();
+            
+            // Call Facade and handle the specific result status
             String status = uiManager.processWithdrawal(accountId, amount);
             
             if ("SUCCESS".equals(status)) {
@@ -84,7 +102,7 @@ public class TellerWithdrawalPage extends JFrame {
         gbc.insets = new Insets(20, 10, 10, 10);
         add(completeButton, gbc);
 
-        // 5. Back Button
+        // Navigation Button
         JButton backButton = new JButton("Back to Account");
         backButton.setBackground(new Color(255, 102, 102)); // Light Red
         backButton.setOpaque(true);

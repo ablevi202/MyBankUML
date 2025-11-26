@@ -15,58 +15,75 @@ import javax.swing.SwingConstants;
 
 import bank.UIManager;
 
+/**
+ * The UI form for reactivating a suspended employee account.
+ * <p>
+ * This screen allows an Admin to restore access to a Teller or other employee
+ * who was previously removed or deactivated. It communicates with the
+ * {@link UIManager} to update the user's status in the database.
+ * </p>
+ */
 public class ActivateEmployeePage extends JFrame {
-    private UIManager uiManager;
+    private final UIManager uiManager;
 
+    /**
+     * Constructs the activation form.
+     *
+     * @param manager The application controller for handling data updates.
+     */
     public ActivateEmployeePage(UIManager manager) {
         this.uiManager = manager;
 
+        // Window Setup
         setTitle("MyBankUML - Activate Employee");
         setSize(500, 300);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
+        
         setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(10, 10, 10, 10);
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.gridx = 0;
 
-        // 1. Header
+        // Header
         JLabel headerLabel = new JLabel("Activate Employee Account", SwingConstants.CENTER);
         headerLabel.setFont(new Font("Arial", Font.BOLD, 16));
         gbc.gridy = 0;
         gbc.gridwidth = 2;
         add(headerLabel, gbc);
 
-        // 2. Instruction
+        // Instruction Label
         JLabel instructionLabel = new JLabel("Enter the username to activate:", SwingConstants.LEFT);
         gbc.gridy = 1;
         add(instructionLabel, gbc);
 
-        // 3. Username Field
+        // Username Input
         JTextField userField = new JTextField();
         gbc.gridy = 2;
         add(userField, gbc);
 
-        // 4. Activate Button
+        // Activate Button
         JButton activateButton = new JButton("Activate Access");
-        activateButton.setBackground(new Color(144, 238, 144)); // Green
+        activateButton.setBackground(new Color(144, 238, 144)); // Light Green
         activateButton.setOpaque(true);
         activateButton.setBorderPainted(false);
         
         activateButton.addActionListener(e -> {
             String username = userField.getText();
+            
             if (username.isEmpty()) {
                 JOptionPane.showMessageDialog(this, "Please enter a username.");
                 return;
             }
 
+            // Call backend to update status
             if (uiManager.activateEmployee(username)) {
                 JOptionPane.showMessageDialog(this, "Employee account activated successfully.");
                 dispose();
                 new AdminDashboard(uiManager);
             } else {
-                JOptionPane.showMessageDialog(this, "Error: User not found.");
+                JOptionPane.showMessageDialog(this, "Error: User not found.", "Activation Failed", JOptionPane.ERROR_MESSAGE);
             }
         });
 
@@ -76,12 +93,13 @@ public class ActivateEmployeePage extends JFrame {
         gbc.anchor = GridBagConstraints.CENTER;
         add(activateButton, gbc);
 
-        // 5. Cancel Button
+        // Cancel Button
         JButton backButton = new JButton("Cancel");
-        backButton.setBackground(new Color(100, 149, 237));
+        backButton.setBackground(new Color(100, 149, 237)); // Cornflower Blue
         backButton.setOpaque(true);
         backButton.setBorderPainted(false);
         backButton.setForeground(Color.WHITE);
+        
         backButton.addActionListener(e -> {
             dispose();
             new ManageEmployeesPage(uiManager);

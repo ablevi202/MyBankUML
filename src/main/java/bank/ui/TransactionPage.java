@@ -13,12 +13,26 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import bank.UIManager;
 
+/**
+ * The UI screen for Customers to perform financial transactions.
+ * <p>
+ * This page allows a logged-in customer to transfer funds from their own accounts
+ * to another valid account ID. It handles input validation and processes the
+ * transaction result (e.g., immediate success, insufficient funds, or risk review).
+ * </p>
+ */
 public class TransactionPage extends JFrame {
-    private UIManager uiManager;
+    private final UIManager uiManager;
 
+    /**
+     * Constructs the Transaction form.
+     *
+     * @param manager The application controller used to execute the transaction.
+     */
     public TransactionPage(UIManager manager) {
         this.uiManager = manager;
 
@@ -26,22 +40,24 @@ public class TransactionPage extends JFrame {
         setSize(500, 450);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
+        
         setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(10, 10, 5, 10);
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.gridx = 0;
 
-        // 1. Header
-        JLabel headerLabel = new JLabel("Creating your transaction:");
+        // Page Header
+        JLabel headerLabel = new JLabel("Creating your transaction:", SwingConstants.CENTER);
         headerLabel.setFont(new Font("Arial", Font.BOLD, 14));
         gbc.gridy = 0;
         add(headerLabel, gbc);
 
-        // 2. From Account Selection
+        // Account Selection Dropdown
         gbc.gridy = 1;
         add(new JLabel("Select the account you would like to pay from:"), gbc);
         
+        // Fetch user's real accounts to populate the dropdown
         List<String[]> userAccounts = uiManager.getUserAccounts();
         String[] accountOptions;
         
@@ -51,6 +67,7 @@ public class TransactionPage extends JFrame {
             accountOptions = new String[userAccounts.size()];
             for (int i = 0; i < userAccounts.size(); i++) {
                 String[] acc = userAccounts.get(i);
+                // Format: "Chequing (853013)"
                 accountOptions[i] = acc[1] + " (" + acc[0] + ")"; 
             }
         }
@@ -59,7 +76,7 @@ public class TransactionPage extends JFrame {
         gbc.gridy = 2;
         add(accountBox, gbc);
 
-        // 3. To Account Field
+        // Destination Account Field
         gbc.gridy = 3;
         add(new JLabel("Enter the ID of the account you want to pay"), gbc);
         
@@ -67,7 +84,7 @@ public class TransactionPage extends JFrame {
         gbc.gridy = 4;
         add(toAccountField, gbc);
 
-        // 4. Amount Field
+        // Amount Field
         gbc.gridy = 5;
         add(new JLabel("How much to pay?"), gbc);
         
@@ -75,7 +92,7 @@ public class TransactionPage extends JFrame {
         gbc.gridy = 6;
         add(amountField, gbc);
 
-        // 5. Complete Button
+        // Submit Button
         JButton completeButton = new JButton("Complete Transaction");
         completeButton.setBackground(new Color(144, 238, 144)); // Light Green
         completeButton.setOpaque(true);
@@ -86,6 +103,7 @@ public class TransactionPage extends JFrame {
             String toId = toAccountField.getText();
             String amount = amountField.getText();
 
+            // Validation
             if (selected == null || selected.equals("No Accounts Found")) {
                 JOptionPane.showMessageDialog(this, "You need a valid account to transfer from.");
                 return;
@@ -95,21 +113,26 @@ public class TransactionPage extends JFrame {
                 return;
             }
 
+            // Extract the numeric Account ID from the dropdown string
             String fromId = selected.substring(selected.lastIndexOf("(") + 1, selected.lastIndexOf(")"));
 
-            // --- CALL REAL BACKEND & CHECK STATUS ---
+            // Execute Transfer and Handle Response Status
             String status = uiManager.performTransfer(fromId, toId, amount);
             
             if ("SUCCESS".equals(status)) {
                 dispose();
-                // Only show success page if it actually succeeded
+                // Redirect to the specific status receipt page
                 new TransactionStatusPage(uiManager, fromId, toId, amount);
+                
             } else if ("PENDING".equals(status)) {
+                // Risk Verification Triggered
                 JOptionPane.showMessageDialog(this, "Transaction amount is large (> $10,000). Sent for Teller Review.");
                 dispose();
                 new CustomerDashboard(uiManager);
+                
             } else if ("INSUFFICIENT".equals(status)) {
                 JOptionPane.showMessageDialog(this, "Error: Insufficient Funds in account " + fromId, "Transaction Failed", JOptionPane.ERROR_MESSAGE);
+                
             } else {
                 JOptionPane.showMessageDialog(this, "Error: Transaction failed. Check Account ID.", "Error", JOptionPane.ERROR_MESSAGE);
             }
@@ -119,11 +142,12 @@ public class TransactionPage extends JFrame {
         gbc.insets = new Insets(20, 10, 5, 10);
         add(completeButton, gbc);
 
-        // 6. Cancel Button
+        // Cancel Button
         JButton cancelButton = new JButton("Cancel");
         cancelButton.setBackground(new Color(255, 102, 102)); // Light Red
         cancelButton.setOpaque(true);
         cancelButton.setBorderPainted(false);
+        
         cancelButton.addActionListener(e -> {
             dispose();
             new CustomerDashboard(uiManager);

@@ -18,9 +18,22 @@ import javax.swing.SwingConstants;
 
 import bank.UIManager;
 
+/**
+ * The UI screen for searching specifically for Bank Accounts.
+ * <p>
+ * This page allows Tellers to look up accounts using criteria such as Account ID,
+ * Customer Name, or Phone Number. Unlike the Customer Search, this result focuses
+ * on financial ledger details (Balance, Type) rather than personal profile info.
+ * </p>
+ */
 public class SearchAccountPage extends JFrame {
-    private UIManager uiManager;
+    private final UIManager uiManager;
 
+    /**
+     * Constructs the Search Account form.
+     *
+     * @param manager The application controller used to execute search queries.
+     */
     public SearchAccountPage(UIManager manager) {
         this.uiManager = manager;
 
@@ -28,19 +41,20 @@ public class SearchAccountPage extends JFrame {
         setSize(500, 450);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
+        
         setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(10, 10, 10, 10);
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.gridx = 0;
 
-        // 1. Header
+        // Page Header
         JLabel headerLabel = new JLabel("Search Menu", SwingConstants.CENTER);
         headerLabel.setFont(new Font("Arial", Font.BOLD, 16));
         gbc.gridy = 0;
         add(headerLabel, gbc);
 
-        // 2. Search Criteria
+        // Criteria Selection
         gbc.gridy = 1;
         add(new JLabel("Search accounts by:"), gbc);
 
@@ -49,7 +63,7 @@ public class SearchAccountPage extends JFrame {
         gbc.gridy = 2;
         add(criteriaBox, gbc);
 
-        // 3. Keywords
+        // Keyword Input
         gbc.gridy = 3;
         add(new JLabel("Search keywords:"), gbc);
 
@@ -57,7 +71,7 @@ public class SearchAccountPage extends JFrame {
         gbc.gridy = 4;
         add(keywordField, gbc);
 
-        // 4. Search Button
+        // Search Button
         JButton searchButton = new JButton("Search");
         searchButton.setBackground(new Color(100, 149, 237)); // Cornflower Blue
         searchButton.setOpaque(true);
@@ -67,7 +81,8 @@ public class SearchAccountPage extends JFrame {
         searchButton.addActionListener(e -> {
             String selectedCriteria = (String) criteriaBox.getSelectedItem();
             String keyword = keywordField.getText();
-            // Show the specific Account Result Panel with REAL data
+            
+            // Switch view to show results
             showResultPanel(selectedCriteria, keyword);
         });
 
@@ -75,11 +90,12 @@ public class SearchAccountPage extends JFrame {
         gbc.insets = new Insets(20, 10, 10, 10);
         add(searchButton, gbc);
 
-        // 5. Back Button
+        // Navigation Button
         JButton backButton = new JButton("Back to Dashboard");
         backButton.setBackground(new Color(255, 102, 102)); // Light Red
         backButton.setOpaque(true);
         backButton.setBorderPainted(false);
+        
         backButton.addActionListener(e -> {
             dispose();
             new TellerDashboard(uiManager);
@@ -91,7 +107,12 @@ public class SearchAccountPage extends JFrame {
         setVisible(true);
     }
 
-    // --- RESULT VIEW: Focuses on Financial Details ---
+    /**
+     * Clears the current form and displays the search results.
+     *
+     * @param criteria The field to search by.
+     * @param keyword  The value to search for.
+     */
     private void showResultPanel(String criteria, String keyword) {
         getContentPane().removeAll();
         setLayout(new GridBagLayout());
@@ -107,11 +128,11 @@ public class SearchAccountPage extends JFrame {
         gbc.gridwidth = 2;
         add(header, gbc);
 
-        // Fetch Data from Backend
+        // Execute Search
         String resultString = uiManager.searchAccounts(criteria, keyword);
         boolean found = resultString.startsWith("ID:");
 
-        // Result Card
+        // Result Display Card
         JPanel accountCard = new JPanel(new GridLayout(3, 1));
         accountCard.setBorder(BorderFactory.createTitledBorder("Account Details"));
         accountCard.setBackground(new Color(240, 248, 255)); // Alice Blue
@@ -119,11 +140,11 @@ public class SearchAccountPage extends JFrame {
         String accountId = "";
 
         if (found) {
-            // Parse the string returned by DatabaseManager
-            // Format: "ID: <id>, Type: <type>, Owner: <owner>, Balance: $<balance>"
+            // Parse the raw string returned by the backend
+            // Expected Format: "ID: <id>, Type: <type>, Owner: <owner>, Balance: $<balance>"
             try {
                 String[] parts = resultString.split(", ");
-                accountId = parts[0].substring(4); // Extract ID
+                accountId = parts[0].substring(4); // Extract ID after "ID: "
                 String type = parts[1].substring(6);
                 String balance = parts[3].substring(9);
 
@@ -134,26 +155,24 @@ public class SearchAccountPage extends JFrame {
                 accountCard.add(new JLabel("Error parsing account data."));
             }
         } else {
-            accountCard.add(new JLabel(resultString)); // "No account found."
+            accountCard.add(new JLabel(resultString)); // Display "No account found."
         }
         
         gbc.gridy = 1;
         gbc.gridwidth = 2;
         add(accountCard, gbc);
 
-        // Action Buttons
+        // Action Button: Manage Account (Only if found)
         if (found) {
             JButton viewBtn = new JButton("Manage This Account");
             viewBtn.setBackground(new Color(173, 216, 230)); // Light Blue
             viewBtn.setOpaque(true);
             viewBtn.setBorderPainted(false);
             
-            // Final variable for lambda
             final String targetId = accountId;
             viewBtn.addActionListener(e -> {
                 dispose();
-                // Go to the Teller Account Action Page with the SPECIFIC ID
-                // Note: You will need to update TellerAccountPage constructor to accept an ID!
+                // Navigate to the management page for this specific account
                 new TellerAccountPage(uiManager, targetId);
             });
             
@@ -161,14 +180,14 @@ public class SearchAccountPage extends JFrame {
             add(viewBtn, gbc);
         }
 
-        // Back Button
+        // Navigation: Reset Search
         JButton backButton = new JButton("Back to Search");
         backButton.setBackground(new Color(255, 102, 102));
         backButton.setOpaque(true);
         backButton.setBorderPainted(false);
         backButton.addActionListener(e -> {
             dispose();
-            new SearchAccountPage(uiManager); // Reset page
+            new SearchAccountPage(uiManager); // Reload the search form
         });
 
         gbc.gridy = 3;

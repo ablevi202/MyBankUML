@@ -14,30 +14,43 @@ import javax.swing.SwingConstants;
 
 import bank.UIManager;
 
+/**
+ * Displays the detailed transaction history for a specific bank account.
+ * <p>
+ * This screen fetches real-time balance and transaction logs from the database
+ * via the {@link UIManager} facade. It is used by Customers to track their spending.
+ * </p>
+ */
 public class AccountHistoryPage extends JFrame {
-    private UIManager uiManager;
+    private final UIManager uiManager;
 
+    /**
+     * Constructs the history view for a specific account.
+     *
+     * @param manager   The application controller for data access.
+     * @param accountId The unique ID of the account to display.
+     */
     public AccountHistoryPage(UIManager manager, String accountId) {
         this.uiManager = manager;
 
         setTitle("MyBankUML - History");
-        setSize(500, 450); // Slightly taller for details
+        setSize(500, 450);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
+        
         setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 10, 5, 10);
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.gridx = 0;
 
-        // 1. Header
+        // Account Header
         JLabel headerLabel = new JLabel("Account Details", SwingConstants.LEFT);
         headerLabel.setFont(new Font("Arial", Font.BOLD, 16));
         gbc.gridy = 0;
         add(headerLabel, gbc);
 
-        // 2. Dynamic Account Info
-        // Fetch the real balance from the database
+        // Display Live Account Data
         String liveBalance = uiManager.getFormattedBalance(accountId);
         String currentUser = uiManager.getCurrentUserName();
 
@@ -45,39 +58,37 @@ public class AccountHistoryPage extends JFrame {
         addLabel(gbc, 2, "Owner: " + currentUser);
         addLabel(gbc, 3, "Current Balance: " + liveBalance);
 
-        // 3. Transaction History Header
+        // Transaction List Header
         JLabel historyHeader = new JLabel("Recent Transactions:");
         historyHeader.setFont(new Font("Arial", Font.BOLD, 14));
         gbc.gridy = 4;
-        gbc.insets = new Insets(20, 10, 5, 10); // Add extra spacing above
+        gbc.insets = new Insets(20, 10, 5, 10);
         add(historyHeader, gbc);
 
-        // 4. Dynamic Transaction List
-        // Fetches real transaction rows from 'transactions' table
+        // Load Transaction History from Database
         List<String[]> history = uiManager.getAccountHistory(accountId);
-        int row = 5;
+        int currentRow = 5;
         
         if (history.isEmpty()) {
-            gbc.gridy = row++;
+            gbc.gridy = currentRow++;
             gbc.insets = new Insets(5, 20, 5, 10);
             JLabel noTrans = new JLabel("No transactions found.");
             noTrans.setForeground(Color.GRAY);
             add(noTrans, gbc);
         } else {
-            gbc.insets = new Insets(2, 20, 2, 10); // Indent list
+            gbc.insets = new Insets(2, 20, 2, 10);
+            
             for (String[] tx : history) {
-                // Data Format: [Type, Amount, To_Account, Timestamp]
-                // Display: "DEPOSIT $500.00 (2025-11-24)"
                 String type = tx[0];
                 String amount = tx[1];
                 String date = tx[3].length() > 10 ? tx[3].substring(0, 10) : tx[3];
                 
                 String labelText = String.format("%s $%s (%s)", type, amount, date);
-                addLabel(gbc, row++, labelText);
+                addLabel(gbc, currentRow++, labelText);
             }
         }
 
-        // 5. Back Button
+        // Navigation Controls
         JButton backButton = new JButton("Back to Dashboard");
         backButton.setBackground(new Color(255, 102, 102)); // Light Red
         backButton.setOpaque(true);
@@ -87,7 +98,7 @@ public class AccountHistoryPage extends JFrame {
             new CustomerDashboard(uiManager);
         });
 
-        gbc.gridy = row;
+        gbc.gridy = currentRow;
         gbc.insets = new Insets(30, 10, 10, 10);
         gbc.anchor = GridBagConstraints.CENTER;
         gbc.fill = GridBagConstraints.NONE;
@@ -96,7 +107,9 @@ public class AccountHistoryPage extends JFrame {
         setVisible(true);
     }
 
-    // Helper to create standard labels
+    /**
+     * Helper method to add a standard label to a specific row in the grid.
+     */
     private void addLabel(GridBagConstraints gbc, int row, String text) {
         JLabel label = new JLabel(text);
         gbc.gridy = row;

@@ -18,8 +18,16 @@ import javax.swing.SwingConstants;
 
 import bank.UIManager;
 
+/**
+ * The UI form for creating a new customer account.
+ * <p>
+ * This screen allows a Teller to input customer details (Name, DOB, Contact Info)
+ * and generate a starting account. It validates input and communicates with the
+ * backend to ensure unique usernames.
+ * </p>
+ */
 public class CreateCustomerPage extends JFrame {
-    private UIManager uiManager;
+    private final UIManager uiManager;
 
     public CreateCustomerPage(UIManager manager) {
         this.uiManager = manager;
@@ -28,40 +36,43 @@ public class CreateCustomerPage extends JFrame {
         setSize(500, 600); 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
+        
         setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(10, 10, 5, 10);
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.gridx = 0;
 
-        // 1. Header
+        // Page Title
         JLabel header = new JLabel("Create Customer Account", SwingConstants.CENTER);
         header.setFont(new Font("Arial", Font.BOLD, 16));
         gbc.gridy = 0;
         gbc.gridwidth = 2;
         add(header, gbc);
 
-        // 2. Fields
+        // Input Fields (Dynamic Row Counter)
+        int currentRow = 1;
+
         JTextField nameField = new JTextField();
-        addField(gbc, 1, "Full Name:", nameField);
+        addField(gbc, currentRow++, "Full Name:", nameField);
 
         JTextField dobField = new JTextField();
-        addField(gbc, 2, "Date of Birth (YYYY-MM-DD):", dobField);
+        addField(gbc, currentRow++, "Date of Birth (YYYY-MM-DD):", dobField);
 
         JTextField phoneField = new JTextField();
-        addField(gbc, 4, "Phone Number:", phoneField);
+        addField(gbc, currentRow++, "Phone Number:", phoneField);
 
         JTextField emailField = new JTextField();
-        addField(gbc, 5, "Email Address:", emailField);
+        addField(gbc, currentRow++, "Email Address:", emailField);
 
         JPasswordField passField = new JPasswordField();
-        addField(gbc, 6, "Initial Password:", passField);
+        addField(gbc, currentRow++, "Initial Password:", passField);
 
         JTextField depositField = new JTextField("0.00");
-        addField(gbc, 7, "Initial Deposit ($):", depositField);
+        addField(gbc, currentRow++, "Initial Deposit ($):", depositField);
 
-        // 3. Account Type
-        gbc.gridy = 8;
+        // Account Type Selection
+        gbc.gridy = currentRow++;
         gbc.gridwidth = 1;
         gbc.gridx = 0;
         add(new JLabel("Account Type:"), gbc);
@@ -71,9 +82,9 @@ public class CreateCustomerPage extends JFrame {
         gbc.gridx = 1;
         add(typeBox, gbc);
 
-        // 4. Create Button
+        // Action Buttons
         JButton createBtn = new JButton("Create Account");
-        createBtn.setBackground(new Color(144, 238, 144)); // Green
+        createBtn.setBackground(new Color(144, 238, 144)); // Light Green
         createBtn.setOpaque(true);
         createBtn.setBorderPainted(false);
         
@@ -86,24 +97,28 @@ public class CreateCustomerPage extends JFrame {
             String deposit = depositField.getText();
             String type = (String) typeBox.getSelectedItem();
 
+            // Basic Validation
             if (name.isEmpty() || password.isEmpty()) {
                 JOptionPane.showMessageDialog(this, "Name and Password are required.");
                 return;
             }
 
-            // --- CALL BACKEND & CHECK RESULT ---
+            // Call backend to create user and account
             boolean success = uiManager.createCustomerAccount(name, dob, type, phone, email, password);
             
             if (success) {
                 String msg = "Customer Account Created!\nUsername: " + name.toLowerCase().replace(" ", "");
+                
+                // Prompt for manual deposit if needed
                 if (!deposit.isEmpty() && !deposit.equals("0") && !deposit.equals("0.00")) {
                     msg += "\n\nNOTE: Please process the deposit of " + deposit + " manually.";
                 }
+                
                 JOptionPane.showMessageDialog(this, msg);
                 dispose();
                 new TellerDashboard(uiManager);
             } else {
-                // ERROR: DUPLICATE USER
+                // Handle duplicate user error
                 JOptionPane.showMessageDialog(this, 
                     "Error: A customer with this name already exists.\nUse 'Search for Customer' to add a new account instead.", 
                     "Creation Failed", 
@@ -111,25 +126,28 @@ public class CreateCustomerPage extends JFrame {
             }
         });
 
-        gbc.gridy = 9;
+        gbc.gridy = currentRow++;
         gbc.gridx = 0;
         gbc.gridwidth = 2;
         gbc.insets = new Insets(20, 10, 10, 10);
         add(createBtn, gbc);
 
-        // 5. Cancel Button
         JButton backBtn = new JButton("Cancel");
         backBtn.addActionListener(e -> {
             dispose();
             new TellerDashboard(uiManager);
         });
-        gbc.gridy = 10;
+        
+        gbc.gridy = currentRow;
         gbc.insets = new Insets(0, 10, 10, 10);
         add(backBtn, gbc);
 
         setVisible(true);
     }
 
+    /**
+     * Helper method to add a label and input field row to the layout.
+     */
     private void addField(GridBagConstraints gbc, int row, String labelText, Component field) {
         gbc.gridy = row;
         gbc.gridx = 0;

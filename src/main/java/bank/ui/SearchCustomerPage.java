@@ -24,39 +24,52 @@ import javax.swing.SwingConstants;
 
 import bank.UIManager;
 
+/**
+ * The UI screen for searching Customer profiles.
+ * <p>
+ * This page allows Tellers to find customers using various criteria (Name, DOB, ID).
+ * The results display personal details and a list of associated accounts, which can
+ * be managed directly from this screen.
+ * </p>
+ */
 public class SearchCustomerPage extends JFrame {
-    private UIManager uiManager;
+    private final UIManager uiManager;
 
+    /**
+     * Constructs the Search Customer form.
+     *
+     * @param manager The application controller used to execute search queries.
+     */
     public SearchCustomerPage(UIManager manager) {
         this.uiManager = manager;
 
         setTitle("MyBankUML - Search Customers");
-        setSize(500, 550); // Increased height to fit the new button
+        setSize(500, 550); // Height accommodates results panel
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
+        
         setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(10, 10, 10, 10);
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.gridx = 0;
 
-        // 1. Header
+        // Header
         JLabel headerLabel = new JLabel("Search Customer Profiles", SwingConstants.CENTER);
         headerLabel.setFont(new Font("Arial", Font.BOLD, 16));
         gbc.gridy = 0;
         add(headerLabel, gbc);
 
-        // 2. Search Criteria
+        // Search Criteria Dropdown
         gbc.gridy = 1;
         add(new JLabel("Search by:"), gbc);
 
-        // UPDATED: Removed "Place of Birth", Added "Date of Birth"
         String[] criteria = {"Name", "Date of Birth", "Customer ID"};
         JComboBox<String> criteriaBox = new JComboBox<>(criteria);
         gbc.gridy = 2;
         add(criteriaBox, gbc);
 
-        // 3. Keywords
+        // Keyword Input
         gbc.gridy = 3;
         add(new JLabel("Keywords:"), gbc);
 
@@ -64,7 +77,7 @@ public class SearchCustomerPage extends JFrame {
         gbc.gridy = 4;
         add(keywordField, gbc);
 
-        // 4. Search Button
+        // Search Button
         JButton searchButton = new JButton("Search");
         searchButton.setBackground(new Color(100, 149, 237)); // Cornflower Blue
         searchButton.setOpaque(true);
@@ -79,7 +92,7 @@ public class SearchCustomerPage extends JFrame {
         gbc.insets = new Insets(20, 10, 10, 10);
         add(searchButton, gbc);
 
-        // 5. Back Button
+        // Navigation Button
         JButton backButton = new JButton("Back to Dashboard");
         backButton.setBackground(new Color(255, 102, 102)); // Light Red
         backButton.setOpaque(true);
@@ -95,6 +108,12 @@ public class SearchCustomerPage extends JFrame {
         setVisible(true);
     }
 
+    /**
+     * Clears the current form and displays the search results.
+     *
+     * @param criteria The field to search by.
+     * @param keyword  The value to search for.
+     */
     private void showResultPanel(String criteria, String keyword) {
         getContentPane().removeAll();
         setLayout(new GridBagLayout());
@@ -110,10 +129,11 @@ public class SearchCustomerPage extends JFrame {
         gbc.gridwidth = 2;
         add(header, gbc);
 
+        // Execute Search
         String resultString = uiManager.searchCustomers(criteria, keyword);
         boolean found = resultString.startsWith("Found:");
 
-        // Details Card
+        // Profile Details Card
         JPanel profileCard = new JPanel(new GridLayout(0, 1));
         profileCard.setBorder(BorderFactory.createTitledBorder("Personal Details"));
         
@@ -122,7 +142,8 @@ public class SearchCustomerPage extends JFrame {
 
         if (found) {
             try {
-                // Parse Format: "Found: Name (ID: username) [Status] {DOB: Date}"
+                // Parse the result string from DatabaseManager
+                // Format: "Found: Name (ID: username) [Status] {DOB: Date}"
                 customerName = resultString.substring(7, resultString.indexOf(" (ID:"));
                 
                 int idStart = resultString.indexOf("(ID: ") + 5;
@@ -131,7 +152,6 @@ public class SearchCustomerPage extends JFrame {
                 
                 String status = resultString.substring(resultString.indexOf("[") + 1, resultString.indexOf("]"));
                 
-                // Extract DOB (Replaces POB logic)
                 int dobStart = resultString.indexOf("DOB: ") + 5;
                 int dobEnd = resultString.indexOf("}");
                 String dob = resultString.substring(dobStart, dobEnd);
@@ -141,7 +161,7 @@ public class SearchCustomerPage extends JFrame {
                 profileCard.add(new JLabel("Status: " + status));
                 profileCard.add(new JLabel("Date of Birth: " + dob));
             } catch (Exception e) {
-                profileCard.add(new JLabel(resultString)); // Fallback if parsing fails
+                profileCard.add(new JLabel(resultString)); // Fallback
             }
         } else {
             profileCard.add(new JLabel("No result found."));
@@ -150,7 +170,7 @@ public class SearchCustomerPage extends JFrame {
         gbc.gridy = 1;
         add(profileCard, gbc);
 
-        // Associated Accounts List
+        // Accounts List
         JLabel accountsLbl = new JLabel("Associated Accounts:");
         gbc.gridy = 2;
         add(accountsLbl, gbc);
@@ -159,6 +179,7 @@ public class SearchCustomerPage extends JFrame {
         JList<String> accountList = new JList<>(listModel);
         accountList.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
         
+        // Fetch Accounts if User Found
         if (found && !customerId.isEmpty()) {
             List<String[]> accounts = uiManager.getCustomerAccounts(customerId);
             if (accounts.isEmpty()) {
@@ -176,9 +197,9 @@ public class SearchCustomerPage extends JFrame {
         gbc.gridy = 3;
         add(listScroll, gbc);
 
-        // Button 1: View/Manage Selected Account
+        // Action Button 1: Manage Selected Account
         JButton viewBtn = new JButton("Manage Selected Account");
-        viewBtn.setBackground(new Color(173, 216, 230));
+        viewBtn.setBackground(new Color(173, 216, 230)); // Light Blue
         viewBtn.setOpaque(true);
         viewBtn.setBorderPainted(false);
         
@@ -189,6 +210,7 @@ public class SearchCustomerPage extends JFrame {
                     int start = selected.indexOf("(ID: ") + 5;
                     int end = selected.indexOf(")");
                     String accId = selected.substring(start, end);
+                    
                     dispose();
                     new TellerAccountPage(uiManager, accId);
                 } catch (Exception ex) {
@@ -202,7 +224,7 @@ public class SearchCustomerPage extends JFrame {
         gbc.gridy = 4;
         add(viewBtn, gbc);
 
-        // Button 2: Open New Account
+        // Action Button 2: Open New Account
         if (found && !customerId.isEmpty()) {
             JButton addAccBtn = new JButton("Open New Account");
             addAccBtn.setBackground(new Color(144, 238, 144)); // Green
@@ -221,7 +243,7 @@ public class SearchCustomerPage extends JFrame {
             add(addAccBtn, gbc);
         }
 
-        // Back Button
+        // Navigation: Reset Search
         JButton backButton = new JButton("Back to Search");
         backButton.addActionListener(e -> {
             dispose();

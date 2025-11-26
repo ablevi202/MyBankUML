@@ -16,9 +16,24 @@ import javax.swing.SwingConstants;
 
 import bank.UIManager;
 
+/**
+ * A dialog form that allows a Teller to open a new account for an existing customer.
+ * <p>
+ * This screen is accessed via the {@link SearchCustomerPage} when a customer profile
+ * is found. It collects the account type and initial deposit, then delegates the
+ * creation to the {@link UIManager}.
+ * </p>
+ */
 public class AddAccountPage extends JFrame {
-    private UIManager uiManager;
+    private final UIManager uiManager;
 
+    /**
+     * Constructs the Add Account form for a specific customer.
+     *
+     * @param manager      The application controller.
+     * @param customerId   The username/ID of the existing customer.
+     * @param customerName The full name of the customer (for display purposes).
+     */
     public AddAccountPage(UIManager manager, String customerId, String customerName) {
         this.uiManager = manager;
 
@@ -26,26 +41,27 @@ public class AddAccountPage extends JFrame {
         setSize(500, 350);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
+        
         setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(10, 10, 5, 10);
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.gridx = 0;
 
-        // 1. Header
+        // Page Title
         JLabel header = new JLabel("Open New Account", SwingConstants.CENTER);
         header.setFont(new Font("Arial", Font.BOLD, 16));
         gbc.gridy = 0;
         gbc.gridwidth = 2;
         add(header, gbc);
 
-        // 2. Customer Info
+        // Customer Context Info
         gbc.gridy = 1;
         gbc.gridwidth = 2;
         JLabel infoLabel = new JLabel("For Customer: " + customerName + " (" + customerId + ")", SwingConstants.CENTER);
         add(infoLabel, gbc);
 
-        // 3. Account Type Selection
+        // Account Type Selection
         gbc.gridy = 2;
         gbc.gridwidth = 1;
         add(new JLabel("Select Account Type:"), gbc);
@@ -55,7 +71,7 @@ public class AddAccountPage extends JFrame {
         gbc.gridx = 1;
         add(typeBox, gbc);
 
-        // 4. Initial Deposit
+        // Initial Deposit Field
         gbc.gridy = 3;
         gbc.gridx = 0;
         add(new JLabel("Initial Deposit ($):"), gbc);
@@ -64,7 +80,7 @@ public class AddAccountPage extends JFrame {
         gbc.gridx = 1;
         add(depositField, gbc);
 
-        // 5. Create Button
+        // Action Buttons
         JButton createBtn = new JButton("Open Account");
         createBtn.setBackground(new Color(144, 238, 144)); // Green
         createBtn.setOpaque(true);
@@ -72,19 +88,17 @@ public class AddAccountPage extends JFrame {
         
         createBtn.addActionListener(e -> {
             String type = (String) typeBox.getSelectedItem();
-            String depositStr = depositField.getText();
-
-            // 1. Create the Account
+            
+            // Call backend to create the account
             uiManager.createNewAccount(customerId, type);
 
-            // 2. Handle Deposit if needed
-            // Note: Since we don't have the new Account ID easily returned here without refactoring,
-            // we instruct the Teller to do it manually or we'd need createNewAccount to return the ID.
-            // For now, just creating the account is the critical step.
+            // Note: Initial deposit logic is currently manual instruction
+            // Future improvement: Automate deposit transaction here
             
             JOptionPane.showMessageDialog(this, type + " Account created successfully!");
             dispose();
-            // Return to Search Page to see the new list
+            
+            // Return to Search Page to refresh the account list
             new SearchCustomerPage(uiManager);
         });
 
@@ -94,7 +108,6 @@ public class AddAccountPage extends JFrame {
         gbc.insets = new Insets(20, 10, 10, 10);
         add(createBtn, gbc);
 
-        // 6. Cancel Button
         JButton cancelBtn = new JButton("Cancel");
         cancelBtn.addActionListener(e -> {
             dispose();

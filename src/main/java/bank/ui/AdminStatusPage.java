@@ -13,9 +13,23 @@ import javax.swing.SwingConstants;
 
 import bank.UIManager;
 
+/**
+ * A confirmation screen displayed after an Admin successfully creates a new employee.
+ * <p>
+ * This page provides immediate feedback, showing the generated credentials for the
+ * new account before allowing the Admin to return to the dashboard.
+ * </p>
+ */
 public class AdminStatusPage extends JFrame {
-    private UIManager uiManager;
+    private final UIManager uiManager;
 
+    /**
+     * Constructs the status confirmation page.
+     *
+     * @param manager  The application controller.
+     * @param username The username of the newly created employee.
+     * @param password The password of the newly created employee.
+     */
     public AdminStatusPage(UIManager manager, String username, String password) {
         this.uiManager = manager;
 
@@ -23,19 +37,20 @@ public class AdminStatusPage extends JFrame {
         setSize(500, 300);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
+        
         setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(10, 10, 5, 10);
         gbc.gridx = 0;
 
-        // 1. Success Message
+        // Success Message
         JLabel successLabel = new JLabel("Account creation was successful.", SwingConstants.CENTER);
         successLabel.setFont(new Font("Arial", Font.BOLD, 16));
         gbc.gridy = 0;
         gbc.anchor = GridBagConstraints.CENTER;
         add(successLabel, gbc);
 
-        // 2. Details
+        // Account Details Display
         JLabel userLabel = new JLabel("New username: " + username);
         userLabel.setFont(new Font("Arial", Font.PLAIN, 14));
         userLabel.setForeground(Color.GRAY);
@@ -48,7 +63,7 @@ public class AdminStatusPage extends JFrame {
         gbc.gridy = 2;
         add(passLabel, gbc);
 
-        // 3. Back Button
+        // Navigation
         JButton backButton = new JButton("Back to Dashboard");
         backButton.setBackground(new Color(100, 149, 237)); // Cornflower Blue
         backButton.setOpaque(true);

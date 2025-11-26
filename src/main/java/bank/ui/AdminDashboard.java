@@ -14,9 +14,22 @@ import javax.swing.SwingConstants;
 
 import bank.UIManager;
 
+/**
+ * The main dashboard for Administrators.
+ * <p>
+ * This screen serves as the central hub for all administrative functions,
+ * providing navigation to employee management, internal search, and
+ * transaction review workflows.
+ * </p>
+ */
 public class AdminDashboard extends JFrame {
-    private UIManager uiManager;
+    private final UIManager uiManager;
 
+    /**
+     * Constructs the Admin Dashboard.
+     *
+     * @param manager The application controller used to manage session state and navigation.
+     */
     public AdminDashboard(UIManager manager) {
         this.uiManager = manager;
 
@@ -24,13 +37,14 @@ public class AdminDashboard extends JFrame {
         setSize(400, 500);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
+        
         setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(10, 10, 10, 10);
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.gridx = 0;
 
-        // 1. Welcome Message (DYNAMIC)
+        // Dynamic Welcome Message
         // Fetches the actual username from the active session
         String welcomeText = "Welcome " + uiManager.getCurrentUserName() + "!";
         JLabel welcomeLabel = new JLabel(welcomeText, SwingConstants.CENTER);
@@ -38,9 +52,10 @@ public class AdminDashboard extends JFrame {
         gbc.gridy = 0;
         add(welcomeLabel, gbc);
 
-        // 2. Menu Buttons
+        // Menu Navigation Buttons
+        
+        // Button: Employee Management (Create, Remove, Activate)
         JButton manageBtn = createButton("Manage Employee Accounts", new Color(173, 216, 230));
-        // Link to Manage Employees Page
         manageBtn.addActionListener(e -> {
             dispose();
             new ManageEmployeesPage(uiManager);
@@ -48,6 +63,7 @@ public class AdminDashboard extends JFrame {
         gbc.gridy = 1;
         add(manageBtn, gbc);
 
+        // Button: Internal Search
         JButton searchBtn = createButton("Search Employee Accounts", new Color(173, 216, 230));
         searchBtn.addActionListener(e -> {
             dispose();
@@ -56,6 +72,7 @@ public class AdminDashboard extends JFrame {
         gbc.gridy = 2;
         add(searchBtn, gbc);
 
+        // Button: Risk Review
         JButton reviewBtn = createButton("Review Pending Transactions", new Color(144, 238, 144));
         reviewBtn.addActionListener(e -> {
             dispose();
@@ -64,7 +81,7 @@ public class AdminDashboard extends JFrame {
         gbc.gridy = 3;
         add(reviewBtn, gbc);
 
-        // 3. Logout
+        // Logout Button
         JButton logoutButton = new JButton("Log out");
         logoutButton.setBackground(new Color(255, 102, 102)); // Red
         logoutButton.setOpaque(true);
@@ -81,6 +98,13 @@ public class AdminDashboard extends JFrame {
         setVisible(true);
     }
 
+    /**
+     * Helper method to create consistently styled menu buttons.
+     *
+     * @param text  The label text for the button.
+     * @param color The background color of the button.
+     * @return A styled JButton ready to be added to the layout.
+     */
     private JButton createButton(String text, Color color) {
         JButton btn = new JButton(text);
         btn.setBackground(color);

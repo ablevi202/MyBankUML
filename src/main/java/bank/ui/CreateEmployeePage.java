@@ -16,9 +16,21 @@ import javax.swing.SwingConstants;
 
 import bank.UIManager;
 
+/**
+ * The UI form for registering a new employee (Teller).
+ * <p>
+ * This screen allows an Administrator to input credentials for a new staff member
+ * and save them to the system. Upon success, it redirects to a confirmation page.
+ * </p>
+ */
 public class CreateEmployeePage extends JFrame {
-    private UIManager uiManager;
+    private final UIManager uiManager;
 
+    /**
+     * Constructs the Create Employee form.
+     *
+     * @param manager The application controller used to save the new user data.
+     */
     public CreateEmployeePage(UIManager manager) {
         this.uiManager = manager;
 
@@ -26,30 +38,21 @@ public class CreateEmployeePage extends JFrame {
         setSize(500, 400);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
+        
         setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 10, 5, 10);
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.gridx = 0;
 
-        // 1. Header
+        // Header
         JLabel headerLabel = new JLabel("Create New Employee Account", SwingConstants.CENTER);
         headerLabel.setFont(new Font("Arial", Font.BOLD, 16));
         gbc.gridy = 0;
         gbc.gridwidth = 2;
         add(headerLabel, gbc);
 
-        // 2. Back Button
-        JButton backButton = new JButton("Back to Dashboard");
-        backButton.setBackground(new Color(255, 102, 102)); // Light Red
-        backButton.setOpaque(true);
-        backButton.setBorderPainted(false);
-        backButton.addActionListener(e -> {
-            dispose();
-            new AdminDashboard(uiManager);
-        });
-
-        // 3. Username Field
+        // Username Field
         gbc.gridy = 1;
         gbc.gridwidth = 2;
         gbc.insets = new Insets(20, 10, 2, 10);
@@ -62,7 +65,7 @@ public class CreateEmployeePage extends JFrame {
         gbc.insets = new Insets(2, 10, 10, 10);
         add(userField, gbc);
 
-        // 4. Password Field
+        // Password Field
         gbc.gridy = 3;
         gbc.insets = new Insets(10, 10, 2, 10);
         JLabel passLbl = new JLabel("New Account Password");
@@ -74,7 +77,7 @@ public class CreateEmployeePage extends JFrame {
         gbc.insets = new Insets(2, 10, 10, 10);
         add(passField, gbc);
 
-        // 5. Enter Button
+        // Submit Button
         JButton enterButton = new JButton("Enter");
         enterButton.setBackground(new Color(100, 149, 237)); // Cornflower Blue
         enterButton.setOpaque(true);
@@ -91,8 +94,7 @@ public class CreateEmployeePage extends JFrame {
                 return;
             }
 
-            // --- CONNECT TO BACKEND ---
-            // Saves the new Teller to the database
+            // Save the new Teller to the database
             uiManager.createEmployee(newUser, newPass);
             
             dispose();
@@ -106,7 +108,17 @@ public class CreateEmployeePage extends JFrame {
         gbc.insets = new Insets(20, 10, 10, 10);
         add(enterButton, gbc);
         
-        // Back Button position
+        // Cancel Button
+        JButton backButton = new JButton("Back to Dashboard");
+        backButton.setBackground(new Color(255, 102, 102)); // Light Red
+        backButton.setOpaque(true);
+        backButton.setBorderPainted(false);
+        
+        backButton.addActionListener(e -> {
+            dispose();
+            new AdminDashboard(uiManager);
+        });
+        
         gbc.gridy = 6;
         add(backButton, gbc);
 

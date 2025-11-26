@@ -3,64 +3,70 @@ package bank;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * The central controller (Facade) for the application.
+ * It coordinates actions between the UI and the specialized Logic Handlers.
+ */
 public class UIManager {
-    private DatabaseManager dbManager;
+    private final DatabaseManager database;
     
-    // --- HANDLERS (New Architecture) ---
-    private LoginHandler loginHandler;
-    private SearchHandler searchHandler;
-    private RiskVerification riskVerifier;
+    // Logic Handlers
+    private final LoginHandler authHandler;
+    private final SearchHandler searchHandler;
+    private final RiskVerification riskManager;
     
-    private String currentUser; 
+    private String currentSessionUser; 
 
     public UIManager() {
-        this.dbManager = new DatabaseManager();
+        this.database = new DatabaseManager();
         
-        // Initialize Handlers
-        this.loginHandler = new LoginHandler(dbManager);
-        this.searchHandler = new SearchHandler(dbManager);
-        this.riskVerifier = new RiskVerification();
+        // Delegate specific responsibilities to handlers
+        this.authHandler = new LoginHandler(database);
+        this.searchHandler = new SearchHandler(database);
+        this.riskManager = new RiskVerification();
         
-        seedDummyData();
+        seedDefaultData();
     }
 
-    private void seedDummyData() {
-        // Standard Seed Data (No POB)
-        dbManager.saveUser("test", "123", "CUSTOMER", "Test Customer", "2000-01-01", "555-1234", "test@bank.com");
-        dbManager.saveUser("teller", "123", "TELLER", "Branch Teller", "1990-05-20", "555-5678", "teller@bank.com");
-        dbManager.saveUser("admin", "123", "ADMIN", "System Administrator", "1985-11-15", "555-9999", "admin@bank.com");
-        dbManager.saveAccount("853013", "test", "Chequing", 5000.00);
+    /**
+     * Seeds the database with default users for testing purposes.
+     */
+    private void seedDefaultData() {
+        database.saveUser("test", "123", "CUSTOMER", "Test Customer", "2000-01-01", "555-1234", "test@bank.com");
+        database.saveUser("teller", "123", "TELLER", "Branch Teller", "1990-05-20", "555-5678", "teller@bank.com");
+        database.saveUser("admin", "123", "ADMIN", "System Administrator", "1985-11-15", "555-9999", "admin@bank.com");
+        
+        database.saveAccount("853013", "test", "Chequing", 15000.00);
     }
 
-    // --- AUTHENTICATION (Delegated to LoginHandler) ---
+    // --- Authentication (Delegated) ---
 
     public boolean handleLogin(String username, String password) {
-        if (loginHandler.validateLogin(username, password)) {
-            this.currentUser = username;
+        if (authHandler.validateLogin(username, password)) {
+            this.currentSessionUser = username;
             return true;
         }
         return false;
     }
 
     public String getDashboardType(String username) {
-        return loginHandler.getUserRole(username);
+        return authHandler.getUserRole(username);
     }
 
     public String getCurrentUserRole() {
-        if (currentUser == null) return "";
-        return getDashboardType(currentUser);
+        if (currentSessionUser == null) return "";
+        return getDashboardType(currentSessionUser);
     }
 
     public String getCurrentUserName() {
-        return currentUser != null ? currentUser : "User"; 
+        return currentSessionUser != null ? currentSessionUser : "User"; 
     }
 
     public void logout() {
-        this.currentUser = null;
-        System.out.println("User logged out.");
+        this.currentSessionUser = null;
     }
 
-    // --- SEARCH (Delegated to SearchHandler) ---
+    // --- Search Operations (Delegated) ---
 
     public String searchCustomers(String criteria, String keyword) {
         return searchHandler.searchCustomers(criteria, keyword);
@@ -78,55 +84,49 @@ public class UIManager {
         return searchHandler.getCustomerAccounts(username);
     }
 
-    // --- REAL DATA OPERATIONS (Direct DB or Hybrid) ---
+    // --- Data Management (Direct DB) ---
 
     public boolean createCustomerAccount(String name, String dob, String type, String phone, String email, String password) {
         String username = name.toLowerCase().replace(" ", "");
         
-        if (dbManager.userExists(username)) {
-            System.out.println("Error: User " + username + " already exists.");
+        if (database.userExists(username)) {
             return false; 
         }
 
-        dbManager.saveUser(username, password, "CUSTOMER", name, dob, phone, email);
+        database.saveUser(username, password, "CUSTOMER", name, dob, phone, email);
         
-        String newAccId = String.valueOf((int)(Math.random() * 1000000));
-        dbManager.saveAccount(newAccId, username, type, 0.0);
+        String newAccId = generateId();
+        database.saveAccount(newAccId, username, type, 0.0);
         
-        System.out.println("Created Customer: " + username + " with Account #" + newAccId);
         return true; 
     }
 
     public void createNewAccount(String username, String type) {
-        String newAccId = String.valueOf((int)(Math.random() * 1000000));
-        dbManager.saveAccount(newAccId, username, type, 0.0);
-        System.out.println("Added new " + type + " account #" + newAccId + " to customer " + username);
+        String newAccId = generateId();
+        database.saveAccount(newAccId, username, type, 0.0);
     }
 
     public void createEmployee(String username, String password) {
-        dbManager.saveUser(username, password, "TELLER", username, "N/A", "N/A", "N/A");
-        System.out.println("Created new employee: " + username);
+        database.saveUser(username, password, "TELLER", username, "N/A", "N/A", "N/A");
     }
 
-    // --- TRANSACTIONS (Using RiskVerification) ---
+    // --- Transactions (Risk Verified) ---
 
     public String processDeposit(String accountId, String amountStr) {
         try {
-            double amount = Double.parseDouble(amountStr.replace("$", "").trim());
+            double amount = parseAmount(amountStr);
             
-            // Use RiskHandler to determine status
-            String status = riskVerifier.getTransactionStatus(amount);
+            // Check for high-value transactions requiring review
+            String status = riskManager.getTransactionStatus(amount);
+            String txId = generateTxId();
             
-            String txId = UUID.randomUUID().toString().substring(0, 8);
-            dbManager.saveTransaction(txId, "DEPOSIT", amount, null, accountId, status);
+            database.saveTransaction(txId, "DEPOSIT", amount, null, accountId, status);
             
             if ("PENDING_REVIEW".equals(status)) {
                 return "PENDING";
             }
 
-            // If COMPLETED, update balance
-            double currentBalance = dbManager.getBalance(accountId);
-            dbManager.updateBalance(accountId, currentBalance + amount);
+            updateBalance(accountId, amount); // Positive amount adds funds
             return "SUCCESS";
             
         } catch (NumberFormatException e) { return "ERROR"; }
@@ -134,42 +134,40 @@ public class UIManager {
 
     public String processWithdrawal(String accountId, String amountStr) {
         try {
-            double amount = Double.parseDouble(amountStr.replace("$", "").trim());
-            String status = riskVerifier.getTransactionStatus(amount);
-            
-            String txId = UUID.randomUUID().toString().substring(0, 8);
-            dbManager.saveTransaction(txId, "WITHDRAWAL", amount, accountId, null, status);
+            double amount = parseAmount(amountStr);
+            String status = riskManager.getTransactionStatus(amount);
+            String txId = generateTxId();
 
             if ("PENDING_REVIEW".equals(status)) {
+                database.saveTransaction(txId, "WITHDRAWAL", amount, accountId, null, status);
                 return "PENDING";
             }
 
-            double currentBalance = dbManager.getBalance(accountId);
+            double currentBalance = database.getBalance(accountId);
             if (currentBalance >= amount) {
-                dbManager.updateBalance(accountId, currentBalance - amount);
+                database.saveTransaction(txId, "WITHDRAWAL", amount, accountId, null, status);
+                database.updateBalance(accountId, currentBalance - amount);
                 return "SUCCESS";
-            } else {
-                return "INSUFFICIENT";
             }
+            return "INSUFFICIENT";
         } catch (NumberFormatException e) { return "ERROR"; }
     }
 
     public String performTransfer(String fromId, String toId, String amountStr) {
         try {
-            double amount = Double.parseDouble(amountStr.replace("$", "").trim());
-            String status = riskVerifier.getTransactionStatus(amount);
-
-            String txId = UUID.randomUUID().toString().substring(0,8);
-            dbManager.saveTransaction(txId, "TRANSFER", amount, fromId, toId, status);
+            double amount = parseAmount(amountStr);
+            String status = riskManager.getTransactionStatus(amount);
+            String txId = generateTxId();
 
             if ("PENDING_REVIEW".equals(status)) {
+                database.saveTransaction(txId, "TRANSFER", amount, fromId, toId, status);
                 return "PENDING";
             }
 
-            if (dbManager.getBalance(fromId) >= amount) {
-                if (dbManager.transfer(fromId, toId, amount)) {
-                    // Update status to COMPLETED if DB transfer succeeds
-                    dbManager.updateTransactionStatus(txId, "COMPLETED"); 
+            if (database.getBalance(fromId) >= amount) {
+                // Attempt atomic transfer in DB
+                if (database.transfer(fromId, toId, amount)) {
+                    database.saveTransaction(txId, "TRANSFER", amount, fromId, toId, "COMPLETED");
                     return "SUCCESS";
                 }
                 return "ERROR";
@@ -178,56 +176,94 @@ public class UIManager {
         } catch (Exception e) { return "ERROR"; }
     }
 
-    // --- UI DATA RETRIEVAL & ADMIN ---
+    // --- UI Data Retrieval ---
 
-    public List<String[]> getUserAccounts() { return dbManager.getUserAccounts(currentUser); }
-    public List<String[]> getAccountHistory(String accountId) { return dbManager.getTransactionHistory(accountId); }
-    
-    public boolean removeEmployee(String username) { 
-        if (username.equals("admin")) return false;
-        return dbManager.deleteUser(username); 
+    public List<String[]> getUserAccounts() { 
+        return database.getUserAccounts(currentSessionUser); 
+    }
+
+    public List<String[]> getAccountHistory(String accountId) { 
+        return database.getTransactionHistory(accountId); 
     }
     
-    public boolean activateEmployee(String username) { return dbManager.activateUser(username); }
-    public double getAccountBalance(String accountId) { return dbManager.getBalance(accountId); }
-    public String getFormattedBalance(String accountId) { return String.format("$%.2f", getAccountBalance(accountId)); }
-    public List<String[]> getPendingTransactions() { return dbManager.getPendingTransactions(); }
+    public boolean removeEmployee(String username) { 
+        if ("admin".equals(username)) return false; 
+        return database.deleteUser(username); 
+    }
+    
+    public boolean activateEmployee(String username) { 
+        return database.activateUser(username); 
+    }
+    
+    public double getAccountBalance(String accountId) {
+        return database.getBalance(accountId);
+    }
+
+    public String getFormattedBalance(String accountId) {
+        return String.format("$%.2f", getAccountBalance(accountId));
+    }
+
+    public List<String[]> getPendingTransactions() {
+        return database.getPendingTransactions();
+    }
+
+    // --- Review Logic ---
 
     public void approveTransaction(String transactionID) {
-        double amount = dbManager.getTransactionAmount(transactionID);
-        String[] parties = dbManager.getTransactionParties(transactionID);
+        double amount = database.getTransactionAmount(transactionID);
+        String[] parties = database.getTransactionParties(transactionID); // [from, to]
 
         if (parties != null) {
             boolean success = false;
             
-            // Simplified atomic checks
+            // Identify transaction type based on null parties
             if (parties[0] != null && parties[1] != null) {
-                 success = dbManager.transfer(parties[0], parties[1], amount);
+                 // Transfer: Sender -> Receiver
+                 success = database.transfer(parties[0], parties[1], amount);
             } else if (parties[1] != null) { 
-                 double cur = dbManager.getBalance(parties[1]); 
-                 dbManager.updateBalance(parties[1], cur + amount); 
+                 // Deposit: No Sender -> Receiver
+                 updateBalance(parties[1], amount); 
                  success = true; 
             } else if (parties[0] != null) { 
-                 double cur = dbManager.getBalance(parties[0]); 
+                 // Withdrawal: Sender -> No Receiver
+                 double cur = database.getBalance(parties[0]); 
                  if (cur >= amount) { 
-                     dbManager.updateBalance(parties[0], cur - amount); 
+                     database.updateBalance(parties[0], cur - amount); 
                      success = true; 
                  } 
             }
 
             if (success) {
-                dbManager.updateTransactionStatus(transactionID, "COMPLETED");
-                System.out.println("Transaction " + transactionID + " APPROVED and Processed.");
+                database.updateTransactionStatus(transactionID, "COMPLETED");
             }
         }
     }
 
     public void denyTransaction(String transactionID) {
-        dbManager.updateTransactionStatus(transactionID, "CANCELLED");
+        database.updateTransactionStatus(transactionID, "CANCELLED");
     }
     
-    // Helper for legacy creation calls
+    // Legacy overload for simpler creation calls
     public void createCustomerAccount(String name, String dob, String type) {
         createCustomerAccount(name, dob, type, "N/A", "N/A", "123");
+    }
+
+    // --- Helpers ---
+
+    private String generateId() {
+        return String.valueOf((int)(Math.random() * 1000000));
+    }
+
+    private String generateTxId() {
+        return UUID.randomUUID().toString().substring(0, 8);
+    }
+
+    private double parseAmount(String amountStr) {
+        return Double.parseDouble(amountStr.replace("$", "").trim());
+    }
+
+    private void updateBalance(String accountId, double amountToAdd) {
+        double cur = database.getBalance(accountId);
+        database.updateBalance(accountId, cur + amountToAdd);
     }
 }
