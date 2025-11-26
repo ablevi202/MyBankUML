@@ -1,20 +1,8 @@
 package bank.ui;
 
-import java.awt.Color;
-import java.awt.Font;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
-
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JTextField;
-import javax.swing.SwingConstants;
-
 import bank.UIManager;
+import javax.swing.*;
+import java.awt.*;
 
 /**
  * A dialog form that allows a Teller to open a new account for an existing customer.
@@ -88,14 +76,20 @@ public class AddAccountPage extends JFrame {
         
         createBtn.addActionListener(e -> {
             String type = (String) typeBox.getSelectedItem();
+            String depositStr = depositField.getText();
             
-            // Call backend to create the account
-            uiManager.createNewAccount(customerId, type);
+            double amount = 0.0;
+            try {
+                amount = Double.parseDouble(depositStr.replace("$", "").trim());
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, "Invalid deposit amount.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
 
-            // Note: Initial deposit logic is currently manual instruction
-            // Future improvement: Automate deposit transaction here
-            
-            JOptionPane.showMessageDialog(this, type + " Account created successfully!");
+            // Call backend to create the account with the initial balance
+            uiManager.createNewAccount(customerId, type, amount);
+
+            JOptionPane.showMessageDialog(this, type + " Account created successfully with $" + amount);
             dispose();
             
             // Return to Search Page to refresh the account list

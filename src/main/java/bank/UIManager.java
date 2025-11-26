@@ -101,9 +101,20 @@ public class UIManager {
         return true; 
     }
 
-    public void createNewAccount(String username, String type) {
+    /**
+     * Creates a new account for an existing user, optionally with an initial balance.
+     */
+    public void createNewAccount(String username, String type, double initialBalance) {
         String newAccId = generateId();
-        database.saveAccount(newAccId, username, type, 0.0);
+        
+        // Save the new account linked to the existing username with the starting balance
+        database.saveAccount(newAccId, username, type, initialBalance);
+        
+        // If there is an initial balance, log it as a deposit transaction history
+        if (initialBalance > 0) {
+             String txId = generateTxId();
+             database.saveTransaction(txId, "DEPOSIT", initialBalance, null, newAccId, "COMPLETED");
+        }
     }
 
     public void createEmployee(String username, String password) {
@@ -243,7 +254,7 @@ public class UIManager {
         database.updateTransactionStatus(transactionID, "CANCELLED");
     }
     
-    // Legacy overload for simpler creation calls
+    // Legacy overload for simpler creation calls (Used by Tests/Main if needed)
     public void createCustomerAccount(String name, String dob, String type) {
         createCustomerAccount(name, dob, type, "N/A", "N/A", "123");
     }
